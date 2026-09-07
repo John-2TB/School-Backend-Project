@@ -1,5 +1,4 @@
 import bcrypt from 'bcrypt';
-import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { User } from "../models/userModel.js";
 import { Teacher } from '../models/teacherModel.js';
@@ -173,6 +172,10 @@ export const changePassword = async (userId, passwordData) => {
   if (!existingUser) {
     throw new AppError('User not found', 404)
   };
+
+  if(!existingUser.mustChangePassword) {
+    throw new AppError('Password has already been changed', 403)
+  }
 
   if (
     typeof currentPassword !== 'string' ||

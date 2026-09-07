@@ -1,4 +1,6 @@
 import jwt from 'jsonwebtoken';
+import { User } from '../models/userModel.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 
 export const authValidation = () => {
@@ -50,4 +52,27 @@ export const authorizeRoles = (...allowedRoles) => {
 
     next();
   }
+};
+
+
+export const ensurePasswordIsChanged = () => {
+  return asyncHandler (
+    async (req, res, next) => {
+      const existingUser = await User.findById(req.user.userId);
+
+      if (!existingUser) {
+        return res.status(404).json({
+          message: 'User not found'
+        });
+      };
+
+      if (existingUser.mustChangePassword) {
+        return res.status(403).json({
+          message: 'You must change password'
+        });
+      };
+
+      next();
+    }
+  );
 };

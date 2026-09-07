@@ -5,7 +5,7 @@ import {
   updateTeacherController,
   deleteTeacherController
 } from '../controllers/teacherController.js';
-import { authValidation, authorizeRoles } from '../middleware/authMiddleware.js';
+import { authValidation, authorizeRoles, ensurePasswordIsChanged } from '../middleware/authMiddleware.js';
 
 
 const router = express.Router();
@@ -13,22 +13,22 @@ const router = express.Router();
 // ====================================
 // POST
 // ====================================
-router.post('/', authValidation(), authorizeRoles('admin'), createTeacherController);
+router.post('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), createTeacherController);
 
 // ====================================
 // GET
 // ====================================
-router.get('/:teacherId', authValidation(), authorizeRoles('admin'), getTeacherController);
-router.get('/', authValidation(), authorizeRoles('admin'), getTeacherController);
+router.get('/:teacherId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), getTeacherController);
+router.get('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'),  getTeacherController);
 
 // ====================================
 // PATCH
 // ====================================
-router.patch('/:teacherId', authValidation(), authorizeRoles('admin'), updateTeacherController);
+router.patch('/:teacherId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), updateTeacherController);
 
 // ====================================
 // DELETE
 // ====================================
-router.delete('/:teacherId', authValidation(), authorizeRoles('admin'), deleteTeacherController);
+router.delete('/:teacherId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), deleteTeacherController);
 
 export default router;
