@@ -2,6 +2,8 @@ import { Student } from "../models/studentModel.js";
 import { AppError } from '../errors/AppError.js';
 import { Subject } from "../models/subjectModel.js";
 import { Class } from "../models/classModel.js";
+import { Teacher } from "../models/teacherModel.js";
+import { User } from "../models/userModel.js";
 
 
 // POST /student
@@ -114,21 +116,59 @@ export const updateStudent = async (studentID, studentDetails) => {
 
 
 // GET /students
-export const getStudent = async (id) => {
+export const getStudent = async (id, user) => {
+
   const studentId = id;
 
-  if (studentId === undefined) {
-    return await Student.find().populate(['class', 'subjects']);
+  // ADMIN
+  if (user.role === 'admin') {
+    if (studentId === undefined) {
+      return await Student.find().populate(['class', 'subjects']);
+    }
+
+    const filteredStudent = await Student.findOne({id: Number(studentId)}).populate(['class', 'subjects']);
+
+
+    if (!filteredStudent) {
+      throw new AppError('Student not found', 404);
+    }
+
+    return filteredStudent;
   }
 
-  const filteredStudent = await Student.findOne({id: Number(studentId)}).populate(['class', 'subjects']);
 
+  // TEACHER
+  if (user.role === "teacher") {
+    if (id !== undefined) {
+      throw new AppError('Unauthorized access', 403);
+    }
 
-  if (!filteredStudent) {
-    throw new AppError('Student not found', 404);
+    const existingUser = await User.findById(user.userId).populate('teacher');
+
+    if (!existingUser) {
+      throw new AppError('User not found', 404);
+    }
+
+    const existingTeacher = existingUser.teacher
+
+    if (!existingTeacher) {
+      throw new AppError('Teacher not found', 404);
+    }
+
+    if (!existingTeacher) {
+      throw new AppError('Teacher not found', 404);
+    }
+
+    const students = await Student.find({
+      class: existingTeacher.class
+    }).populate(['class', 'subjects']);
+
+    if (students.length === 0) {
+      throw new AppError('No student found', 404);
+    };
+
+    return students;
   }
-
-  return filteredStudent;
 };
 
 

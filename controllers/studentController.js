@@ -4,7 +4,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 // GET /student
 export const getStudentController = asyncHandler(
   async (req, res) => {
-    const student = await getStudent(req.params.id);
+    const student = await getStudent(req.params.id, req.user);
 
     res.status(200).json({
       message: 'Students found',

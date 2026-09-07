@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/userModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { Teacher } from '../models/teacherModel.js';
+import { Student } from '../models/studentModel.js';
 
 
 export const authValidation = () => {
@@ -69,6 +71,51 @@ export const ensurePasswordIsChanged = () => {
       if (existingUser.mustChangePassword) {
         return res.status(403).json({
           message: 'You must change password'
+        });
+      };
+      
+      next();
+    }
+  );
+};
+
+
+export const authorizeStudentAccess = () => {
+  return asyncHandler(
+    async (req, res, next) => {
+      // Checks if the user is an admin so it skips the student access which is meant for the teachers
+      if (req.user.role === 'admin') {
+       return next();
+      }
+
+      // Checks if a parameter ID was passed then it checks if the teacher's class coresspond with the requested student class
+      const existingUser = await User.findById(req.user.userId).populate('teacher');
+
+      if (!existingUser) {
+        return res.status(404).json({
+          message: "User not found"
+        });
+      };
+
+      if (!existingUser.teacher) {
+        return res.status(404).json({
+          message: "User is not assigned as a teacher"
+        });
+      }
+
+      const existingTeacher = existingUser.teacher;
+
+      const requestedStudent = await Student.findById(req.params.id);
+
+      if (!requestedStudent) {
+        return res.status(404).json({
+          message: "Student not found"
+        });
+      };
+
+      if (!existingTeacher.class.equals(requestedStudent.class)) {
+        return res.status(403).json({
+          message: "You are not assigned to this class"
         });
       };
 
