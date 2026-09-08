@@ -154,10 +154,6 @@ export const getStudent = async (id, user) => {
       throw new AppError('Teacher not found', 404);
     }
 
-    if (!existingTeacher) {
-      throw new AppError('Teacher not found', 404);
-    }
-
     const students = await Student.find({
       class: existingTeacher.class
     }).populate(['class', 'subjects']);

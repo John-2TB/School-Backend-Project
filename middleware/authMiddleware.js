@@ -207,3 +207,45 @@ export const authorizeClassAccess = () => {
     }
   );
 };
+
+
+
+export const authorizeSubjectAccess = () => {
+  return asyncHandler(
+    async (req, res, next) => {
+
+      if (req.user.role === 'admin' || req.user.role === 'teacher') {
+        return next();
+      }
+
+      const existingUser = await User.findById(req.user.userId).populate('student');
+
+      if (!existingUser) {
+        return res.status(404).json({
+          message: 'User not found'
+        });
+      };
+
+      const existingStudent = existingUser.student;
+
+      if (!existingStudent) {
+        return res.status(404).json({
+          message: "User is not assigned to a student"
+        });
+      };
+
+      const hasAccess = existingStudent.subjects.some(
+        subject => subject.equals(req.params.subjectId)
+      );
+
+      if (!hasAccess) {
+        return res.status(403).json({
+          message: "Unauthorized access"
+        });
+      }
+
+      return next();
+
+    }
+  );
+};

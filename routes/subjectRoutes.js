@@ -1,6 +1,6 @@
 import express from 'express';
-import { createSubjectController, deleteSubjectController, getStudentsBySubjectIdController } from "../controllers/subjectController.js";
-import { authValidation, authorizeRoles, ensurePasswordIsChanged } from '../middleware/authMiddleware.js';
+import { createSubjectController, deleteSubjectController, getStudentsBySubjectIdController, getSubjectController } from "../controllers/subjectController.js";
+import { authValidation, authorizeRoles, authorizeSubjectAccess, ensurePasswordIsChanged } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -13,6 +13,10 @@ router.post('/', authValidation(),  ensurePasswordIsChanged(), authorizeRoles('a
 // GET
 // ====================================
 router.get('/:subjectId/students', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), getStudentsBySubjectIdController);
+
+router.get('/:subjectId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher', 'student'), authorizeSubjectAccess(), getSubjectController);
+
+router.get('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher', 'student'), getSubjectController);
 
 
 // ====================================

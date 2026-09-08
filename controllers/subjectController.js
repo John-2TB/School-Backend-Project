@@ -1,4 +1,4 @@
-import { createSubject, getstudentsBySubjectId, deleteSubject } from "../services/subjectService.js";
+import { createSubject, getstudentsBySubjectId, deleteSubject, getSubjects } from "../services/subjectService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // POST /subject
@@ -19,9 +19,20 @@ export const getStudentsBySubjectIdController = asyncHandler(
     const students = await getstudentsBySubjectId(req.params.subjectId)
 
     res.status(200).json({
-      message: 'Students found',
+      message: 'Students found for this subject',
       data: students
     })
+  }
+);
+
+export const getSubjectController = asyncHandler(
+  async (req, res) => {
+    const subjects = await getSubjects(req.user, req.params.subjectId);
+
+    res.status(200).json({
+      message: 'Subjects found',
+      data: subjects
+    });
   }
 );
 
