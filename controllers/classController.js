@@ -1,4 +1,4 @@
-import { createClass, deleteClass, getStudentByClass } from "../services/classService.js";
+import { createClass, deleteClass, getClasses, getStudentByClass, updateClass } from "../services/classService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 
@@ -22,7 +22,31 @@ export const getStudentByClassController = asyncHandler(
     res.status(200).json({
       message: 'Students found',
       data: students
-    })
+    });
+  }
+);
+
+export const getClassesController = asyncHandler(
+  async (req, res) => {
+    const classes = await getClasses(req.params.classId);
+
+    res.status(200).json({
+      message: 'Classes found',
+      data: classes
+    });
+  }
+)
+
+
+// PATCH class
+export const updateClassController = asyncHandler(
+  async (req, res) => {
+    const updatedClass = await updateClass(req.params.classId, req.body)
+
+    res.status(200).json({
+      message: 'Class updated successfully',
+      data: updatedClass
+    });
   }
 );
 

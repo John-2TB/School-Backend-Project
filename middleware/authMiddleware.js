@@ -123,3 +123,87 @@ export const authorizeStudentAccess = () => {
     }
   );
 };
+
+
+export const authorizeTeacherAccess = () => {
+  return asyncHandler(
+    async (req, res, next) => {
+      
+      // To allow admin
+      if (req.user.role === 'admin') {
+
+        return next();
+      }
+
+      const existingUser = await User.findById(req.user.userId).populate('teacher');
+
+      if (!existingUser) {
+        return res.status(404).json({
+          message: 'User not found'
+        });
+      }
+
+      const existingTeacher = existingUser.teacher;
+
+      if (!existingTeacher) {
+        return res.status(404).json({
+          message: "User is not assigned as a teacher"
+        })
+      }
+
+      if (!existingTeacher._id.equals(req.params.teacherId)) {
+        return res.status(403).json({
+          message: 'Unauthorized access'
+        });
+      }
+
+      next();
+    }
+  );
+};
+
+
+
+export const authorizeClassAccess = () => {
+  return asyncHandler(
+    async (req, res, next) => {
+
+      // To allow admin
+      if (req.user.role === 'admin') {
+
+        return next();
+      }
+
+      const existingUser = await User.findById(req.user.userId).populate('teacher');
+
+      if (!existingUser) {
+        return res.status(404).json({
+          message: 'User not found'
+        });
+      }
+
+      const existingTeacher = existingUser.teacher;
+
+      if (!existingTeacher) {
+        return res.status(404).json({
+          message: "User is not assigned as a teacher"
+        });
+      }
+
+      if (!existingTeacher.class) {
+        return res.status(404).json({
+          message: "Teacher is not assigned to a class"
+        });
+      }
+
+      if(!existingTeacher.class.equals(req.params.classId)) {
+        return res.status(403).json({
+          message: 'Unauthorized access'
+        });
+      }
+
+      next();
+
+    }
+  );
+};

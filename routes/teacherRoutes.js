@@ -5,7 +5,7 @@ import {
   updateTeacherController,
   deleteTeacherController
 } from '../controllers/teacherController.js';
-import { authValidation, authorizeRoles, ensurePasswordIsChanged } from '../middleware/authMiddleware.js';
+import { authValidation, authorizeRoles, authorizeTeacherAccess, ensurePasswordIsChanged } from '../middleware/authMiddleware.js';
 
 
 const router = express.Router();
@@ -18,13 +18,13 @@ router.post('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('ad
 // ====================================
 // GET
 // ====================================
-router.get('/:teacherId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), getTeacherController);
+router.get('/:teacherId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeTeacherAccess(), getTeacherController);
 router.get('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'),  getTeacherController);
 
 // ====================================
 // PATCH
 // ====================================
-router.patch('/:teacherId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), updateTeacherController);
+router.patch('/:teacherId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeTeacherAccess(), updateTeacherController);
 
 // ====================================
 // DELETE
