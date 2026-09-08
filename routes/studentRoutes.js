@@ -35,6 +35,6 @@ router.patch('/:id', validatesStudent({requireAll: false}), authValidation(), en
 // ====================================
 // DELETE
 // ====================================
-router.delete('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), deleteStudentController);
+router.delete('/:id', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), deleteStudentController);
 
 export default router;

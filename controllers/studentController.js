@@ -42,7 +42,7 @@ export const updateStudentController = asyncHandler(
 // DELETE /student
 export const deleteStudentController = asyncHandler(
   async (req, res) => {
-    const deletedStudent = await deleteStudent(req.query.id);
+    const deletedStudent = await deleteStudent(req.params.id);
 
     res.status(200).json({     
       message: 'Student was successfully deleted',

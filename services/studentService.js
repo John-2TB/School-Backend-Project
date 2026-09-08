@@ -47,7 +47,6 @@ export const createStudent = async (studentData) => {
 
 // PATCH /student/:id
 export const updateStudent = async (studentID, studentDetails) => {
-  const studentId = Number(studentID);
 
   const { name, age, class: studentClass, subjects } = studentDetails;
 
@@ -101,8 +100,8 @@ export const updateStudent = async (studentID, studentDetails) => {
     throw new AppError('No valid fields provided for update', 400);
   }
 
-  const updatedStudent = await Student.findOneAndUpdate(
-    { id: studentId },
+  const updatedStudent = await Student.findByIdAndUpdate(
+    studentID,
     updateData,
     {new: true}
   );
@@ -175,13 +174,23 @@ export const getStudent = async (id, user) => {
 
 // DELETE /student
 export const deleteStudent = async (studentId) => {
-  const id = Number(studentId);
 
-  const deletedStudent = await Student.findOneAndDelete({id: id});
+  const existingStudent = await Student.findById(studentId);
   
-  if (!deletedStudent) {
+  if (!existingStudent) {
     throw new AppError('Student not found', 404)
   };
+
+  const existingUser = await User.findOne({
+    student: studentId
+  });
+
+  // Delete the linked user account if one exists
+  if (existingUser) {
+    await User.findByIdAndDelete(existingUser._id)
+  }
+
+  const deletedStudent = await Student.findByIdAndDelete(studentId);
 
   return deletedStudent;
 };
