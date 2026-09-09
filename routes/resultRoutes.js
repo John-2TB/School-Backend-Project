@@ -14,12 +14,14 @@ router.post('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('ad
 // ====================================
 // GET
 // ====================================
+
+
 router.get(
-  '/',
+  '/student/:studentId',
   authValidation(),
   ensurePasswordIsChanged(),
   authorizeRoles('admin', 'teacher', 'student'),
-  getResultController
+  getResultsByStudentController
 );
 
 
@@ -31,14 +33,12 @@ router.get(
   getResultController
 );
 
-
-
 router.get(
-  '/student/:studentId',
+  '/',
   authValidation(),
   ensurePasswordIsChanged(),
   authorizeRoles('admin', 'teacher', 'student'),
-  getResultsByStudentController
+  getResultController
 );
 
 

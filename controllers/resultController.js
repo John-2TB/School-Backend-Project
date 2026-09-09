@@ -17,11 +17,11 @@ export const createResultController = asyncHandler(
 
 export const getResultController = asyncHandler(
   async (req, res) => {
-    const getResult = await getResult(req.user, req.params.resultId);
+    const result = await getResult(req.user, req.params.resultId);
 
     res.status(200).json({
       message: 'Result found',
-      data: getResult
+      data: result
     });
   }
 );
