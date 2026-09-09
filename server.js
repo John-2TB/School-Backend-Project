@@ -6,6 +6,7 @@ import subjectRoutes from './routes/subjectRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import teacherRoutes from './routes/teacherRoutes.js';
 import academicSessionRoutes from './routes/academicSessionRoutes.js'
+import resultRoutes from './routes/resultRoutes.js'
 import { errorHandler } from './middleware/errorHandler.js';
 import { connectDB } from './config/db.js';
 
@@ -21,6 +22,7 @@ app.use('/subjects', subjectRoutes);
 app.use('/user', userRoutes);
 app.use('/teachers', teacherRoutes);
 app.use('/academicSessions', academicSessionRoutes);
+app.use('/results', resultRoutes);
 
 
 app.get('/', (req, res) => {

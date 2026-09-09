@@ -42,7 +42,25 @@ const resultSchema = new mongoose.Schema({
     type: Number,
     min: 0,
     max: 100
+  },
+
+  grade: {
+    type: String,
+    enum: ['A', 'B', 'C', 'D', 'E', 'F'],
+    trim: true
   }
 });
+
+resultSchema.index(
+  {
+    student: 1,
+    subject: 1,
+    academicSession: 1,
+    term: 1
+  },
+  {
+    unique: true
+  }
+);
 
 export const Result = mongoose.model('Result', resultSchema);
