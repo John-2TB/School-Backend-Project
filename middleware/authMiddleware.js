@@ -3,6 +3,7 @@ import { User } from '../models/userModel.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { Teacher } from '../models/teacherModel.js';
 import { Student } from '../models/studentModel.js';
+import { Result } from '../models/resultModel.js';
 
 
 export const authValidation = () => {
@@ -245,6 +246,53 @@ export const authorizeSubjectAccess = () => {
       }
 
       return next();
+
+    }
+  );
+};
+
+
+
+export const authorizeResultSubjectAccess = () => {
+  return asyncHandler(
+    async (req, res, next) => {
+
+      if (req.user.role === 'admin') {
+        return next();
+      }
+
+
+      const existingUser = await User.findById(req.user.userId).populate('teacher');
+  
+      if (!existingUser) {
+        throw new AppError('User not found', 404);
+      };
+  
+      const existingTeacher = existingUser.teacher;
+  
+      if (!existingTeacher) {
+        throw new AppError('User is not assigned as a teacher', 404);
+      };
+  
+      if (existingTeacher.subjects.length === 0) {
+        throw new AppError('Teacher is not assigned to a subject', 400);
+      }
+  
+      const existingResult = await Result.findById(req.params.resultId);
+  
+      if (!existingResult) {
+        throw new AppError('Result not found', 404);
+      }
+  
+      const hasAccess = existingTeacher.subjects.some(
+        subject => subject.equals(existingResult.subject)
+      );
+  
+      if (!hasAccess) {
+        throw new AppError('Unauthorized Access', 403);
+      }
+
+      next();
 
     }
   );

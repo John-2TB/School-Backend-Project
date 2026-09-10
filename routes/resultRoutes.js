@@ -1,5 +1,5 @@
 import express from 'express';
-import { authorizeRoles, authValidation, ensurePasswordIsChanged, } from '../middleware/authMiddleware.js';
+import { authorizeRoles, authValidation, ensurePasswordIsChanged, authorizeResultSubjectAccess} from '../middleware/authMiddleware.js';
 import { createResultController, deleteResultController, getResultController, getResultsByStudentController, updateResultController } from '../controllers/resultController.js';
 
 
@@ -50,6 +50,7 @@ router.patch(
   authValidation(),
   ensurePasswordIsChanged(),
   authorizeRoles('admin', 'teacher'),
+  authorizeResultSubjectAccess(),
   updateResultController
 );
 
@@ -61,6 +62,7 @@ router.delete(
   authValidation(),
   ensurePasswordIsChanged(),
   authorizeRoles('admin', 'teacher'),
+  authorizeResultSubjectAccess(),
   deleteResultController
 );
 

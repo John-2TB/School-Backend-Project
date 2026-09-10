@@ -41,7 +41,7 @@ export const updateResultController = asyncHandler(
 
 export const deleteResultController = asyncHandler(
   async (req, res) => {
-    const deletedResult = await deleteResult(req.user, req.params.resultId);
+    const deletedResult = await deleteResult(req.params.resultId);
 
     res.status(200).json({
       message: 'Result deleted successfully',

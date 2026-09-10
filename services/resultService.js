@@ -416,7 +416,7 @@ export const updateResult = async (resultId, resultData) => {
 
 
 
-export const deleteResult = async (user, resultId) => {
+export const deleteResult = async (resultId) => {
 
   if (
     resultId === undefined ||
@@ -427,56 +427,17 @@ export const deleteResult = async (user, resultId) => {
     throw new AppError('Invalid result ID', 400);
   }
 
-  // If user is an admin
-  if (user.role === 'admin') {
-    const existingResult = await Result.findById(resultId);
 
-    if (!existingResult) {
-      throw new AppError('Result not found', 404);
-    }
+  const existingResult = await Result.findById(resultId);
 
-    const deletedResult = await Result.findByIdAndDelete(resultId);
-
-    return deletedResult;
-  };
-
-  // If user is a teacher, check if teacher teaches that subject, if yes access is granted
-  if (user.role === 'teacher') {
-    const existingUser = await User.findById(user.userId).populate('teacher');
-
-    if (!existingUser) {
-      throw new AppError('User not found', 404);
-    };
-
-
-    const existingTeacher = existingUser.teacher;
-
-    if (!existingTeacher) {
-      throw new AppError('User is not assigned as a teacher', 404);
-    };
-
-    if (existingTeacher.subjects.length === 0) {
-      throw new AppError('Teacher is not assigned to a subject', 400);
-    }
-
-    const existingResult = await Result.findById(resultId);
-
-    if (!existingResult) {
-      throw new AppError('Result not found', 404);
-    }
-
-    const hasAccess = existingTeacher.subjects.some(
-      subject => subject.equals(existingResult.subject)
-    );
-
-    if (!hasAccess) {
-      throw new AppError('Unauthorized Access', 403);
-    }
-
-    const deletedResult = await Result.findByIdAndDelete(resultId);
-
-    return deletedResult;
+  if (!existingResult) {
+    throw new AppError('Result not found', 404);
   }
+
+  const deletedResult = await Result.findByIdAndDelete(resultId);
+
+  return deletedResult;
+
 
 };
 
