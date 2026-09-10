@@ -1,4 +1,4 @@
-import { createStudent, deleteStudent, getStudent, updateStudent } from '../services/studentService.js';
+import { createStudent, deleteStudent, getStudent, getStudentByRegistrationNumber, updateStudent } from '../services/studentService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // GET /student
@@ -12,6 +12,19 @@ export const getStudentController = asyncHandler(
     });
   }
 );
+
+// GET student by registration number
+export const getStudentByRegistrationNumberController = asyncHandler(
+  async (req, res) => {
+    const student = await getStudentByRegistrationNumber(req.params.registrationNumber);
+
+    res.status(200).json({
+      message: 'Students found',
+      data: student
+    });
+  }
+);
+
 
 // POST /student
 export const createStudentController = asyncHandler(
@@ -50,6 +63,3 @@ export const deleteStudentController = asyncHandler(
     });
   }
 );
-
-
-

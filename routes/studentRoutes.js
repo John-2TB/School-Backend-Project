@@ -4,6 +4,7 @@ import { authValidation, authorizeRoles, authorizeStudentAccess, ensurePasswordI
 import { 
   createStudentController, 
   deleteStudentController, 
+  getStudentByRegistrationNumberController, 
   getStudentController, 
   updateStudentController
 } from '../controllers/studentController.js';
@@ -15,6 +16,9 @@ const router = express.Router();
 // GET
 // ====================================
 router.get('/:studentId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeStudentAccess(), getStudentController);
+
+router.get('/registration/:registrationNumber', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeStudentAccess(), getStudentByRegistrationNumberController);
+
 router.get('/', authValidation(),ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), getStudentController);
 
 

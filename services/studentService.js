@@ -252,3 +252,26 @@ export const deleteStudent = async (studentId) => {
 
   return deletedStudent;
 };
+
+
+
+// Get students by registration number
+export const getStudentByRegistrationNumber = async (registrationNumber) => {
+  if (
+    registrationNumber === undefined ||
+    typeof registrationNumber !== 'string' ||
+    registrationNumber.trim().length === 0
+  ) {
+    throw new AppError('Invalid registration number', 400);
+  };
+
+  const existingStudent = await Student.findOne({
+    registrationNumber: registrationNumber
+  });
+
+  if (!existingStudent) {
+    throw new AppError('No student found', 404);
+  }
+
+  return existingStudent;
+};

@@ -1,4 +1,4 @@
-import { createResults, deleteResult, getResult, getResultsByStudent, updateResult } from "../services/resultService.js";
+import { createResults, deleteResult, getResult, getResultsByStudent, getResultsByStudentRegistrationNumber, updateResult } from "../services/resultService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 
@@ -52,9 +52,9 @@ export const deleteResultController = asyncHandler(
 
 
 
-export const getResultsByStudentController = asyncHandler(
+export const getResultsByStudentRegistrationNumberController = asyncHandler(
   async (req, res) => {
-    const result = await getResultsByStudent(req.user, req.params.studentId);
+    const result = await getResultsByStudentRegistrationNumber(req.user, req.params.registrationNumber);
 
     res.status(200).json({
       message: 'Result found successfully',

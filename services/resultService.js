@@ -443,18 +443,19 @@ export const deleteResult = async (resultId) => {
 
 
 
-// GETs result through student ID
-export const getResultsByStudent = async (user, studentId) => {
+// GETs result through student registration number
+export const getResultsByStudentRegistrationNumber = async (user, registrationNumber) => {
   if (
-    studentId === undefined ||
-    typeof studentId !== 'string' ||
-    studentId.trim().length === 0 ||
-    !mongoose.isValidObjectId(studentId)
+    registrationNumber === undefined ||
+    typeof registrationNumber !== 'string' ||
+    registrationNumber.trim().length === 0
   ) {
-    throw new AppError('Invalid student ID', 400);
+    throw new AppError('Invalid registration number', 400);
   }
 
-  const existingStudent = await Student.findById(studentId);
+  const existingStudent = await Student.findOne({
+    registrationNumber: registrationNumber
+  });
 
   if (!existingStudent) {
     throw new AppError('Student not found', 404);
@@ -463,7 +464,7 @@ export const getResultsByStudent = async (user, studentId) => {
   // And the user is an admin, generate all the result
   if (user.role === 'admin') {
     const existingResult = await Result.find({
-      student: studentId
+      student: existingStudent._id
     }).populate(['student', 'subject', 'academicSession']);
 
     if (existingResult.length === 0) {
@@ -478,7 +479,7 @@ export const getResultsByStudent = async (user, studentId) => {
     const existingUser = await User.findById(user.userId).populate('teacher');
 
     if (!existingUser) {
-        throw new AppError('User not found', 404);
+      throw new AppError('User not found', 404);
     };
 
     const existingTeacher = existingUser.teacher;
@@ -503,7 +504,7 @@ export const getResultsByStudent = async (user, studentId) => {
     }
 
     const studentResults = await Result.find({
-      student: studentId
+      student: existingStudent._id
     }).populate(['student', 'subject', 'academicSession']);
 
     if (studentResults.length === 0) {
@@ -519,17 +520,15 @@ export const getResultsByStudent = async (user, studentId) => {
     const existingUser = await User.findById(user.userId).populate('student');
 
     if (!existingUser) {
-        throw new AppError('User not found', 404);
+      throw new AppError('User not found', 404);
     };
 
-    const existingStudent = existingUser.student;
-
-    if (!existingStudent) {
+    if (!existingUser.student) {
       throw new AppError('User is not assigned as a student', 404);
     };
 
     if (
-      !existingStudent._id.equals(studentId)
+      !existingUser.student._id.equals(existingStudent._id)
     ) {
       throw new AppError('Unauthorized access', 403);
     };
@@ -545,4 +544,4 @@ export const getResultsByStudent = async (user, studentId) => {
     return studentResults;
   }
 
-}
+};
