@@ -4,7 +4,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 // GET /student
 export const getStudentController = asyncHandler(
   async (req, res) => {
-    const student = await getStudent(req.params.id, req.user);
+    const student = await getStudent(req.params.studentId, req.user);
 
     res.status(200).json({
       message: 'Students found',
@@ -29,7 +29,7 @@ export const createStudentController = asyncHandler(
 // PATCH /student/:id
 export const updateStudentController = asyncHandler(
   async (req, res) => {
-    const updatedStudent = await updateStudent(req.params.id, req.body);
+    const updatedStudent = await updateStudent(req.params.studentId, req.body);
 
     res.status(200).json({
       message: 'Student updated successfully',
@@ -42,7 +42,7 @@ export const updateStudentController = asyncHandler(
 // DELETE /student
 export const deleteStudentController = asyncHandler(
   async (req, res) => {
-    const deletedStudent = await deleteStudent(req.params.id);
+    const deletedStudent = await deleteStudent(req.params.studentId);
 
     res.status(200).json({     
       message: 'Student was successfully deleted',

@@ -4,12 +4,35 @@ import { Subject } from "../models/subjectModel.js";
 import { Class } from "../models/classModel.js";
 import { Teacher } from "../models/teacherModel.js";
 import { User } from "../models/userModel.js";
+import { AcademicSession } from "../models/academicSessionModel.js";
+import { StudentCounter } from "../models/studentCounterModel.js";
 
 
 // POST /student
 export const createStudent = async (studentData) => {
-  const { id, name, age, class: studentClass, subjects } = studentData;
+  const {
+    name,
+    age,
+    class: studentClass,
+    subjects,
+    academicSession
+  } = studentData;
 
+  if (
+    academicSession === undefined ||
+    typeof academicSession !== 'string' ||
+    academicSession.trim().length === 0
+  ) {
+    throw new AppError('Invalid data passed into academic session', 400);
+  };
+
+
+  // Checks if academic session exist
+  const existingSession = await AcademicSession.findById(academicSession);
+
+  if (!existingSession) {
+    throw new AppError('Academic session not found', 404);
+  };
 
   // Check if the class exists
   const existingClass = await Class.findById(studentClass);
@@ -30,16 +53,33 @@ export const createStudent = async (studentData) => {
     }
   }
 
+  // Generate the registration number
+
+  const counter = await StudentCounter.findOneAndUpdate(
+    {},
+    { $inc: { sequence: 1 } },
+    { new: true, upsert: true }
+  );
+
+  const session = existingSession.session;
+
+  const [startYear, endYear] = session.split('/');
+
+  const sessionYear = `${startYear.slice(-2)}/${endYear.slice(-2)}`;
+
+  const sequenceNumber = String(counter.sequence).padStart(3, '0');
+
+  const registrationNumber = `MCS/${sessionYear}/${sequenceNumber}`;
+
 
   const newStudent = await Student.create({
-    id,
+    registrationNumber,
     name,
     age,
     class: studentClass,
-    subjects
+    subjects,
+    academicSession
   });
-
-  console.log(newStudent);
 
   return newStudent;
 };
@@ -48,7 +88,14 @@ export const createStudent = async (studentData) => {
 // PATCH /student/:id
 export const updateStudent = async (studentID, studentDetails) => {
 
-  const { name, age, class: studentClass, subjects } = studentDetails;
+  const {
+    name,
+    age,
+    class: studentClass,
+    subjects,
+    registrationNumber,
+    academicSession
+  } = studentDetails;
 
   if(
     (name !== undefined && typeof name !== 'string') ||
@@ -86,6 +133,13 @@ export const updateStudent = async (studentID, studentDetails) => {
   if (subjects !== undefined && subjects.length === 0) {
     throw new AppError('Subjects cannot be empty', 400);
   }
+
+  if (
+    registrationNumber !== undefined ||
+    academicSession !== undefined
+  ) {
+    throw new AppError('Registration number and academic session cannot be edited', 400);
+  }
   
 
   const updateData = {
@@ -115,17 +169,21 @@ export const updateStudent = async (studentID, studentDetails) => {
 
 
 // GET /students
-export const getStudent = async (id, user) => {
-
-  const studentId = id;
+export const getStudent = async (studentId, user) => {
 
   // ADMIN
   if (user.role === 'admin') {
     if (studentId === undefined) {
-      return await Student.find().populate(['class', 'subjects']);
+      const students = await Student.find().populate(['class', 'subjects']);
+
+      if (students.length === 0) {
+        throw new AppError('No student found', 404);
+      }
+
+      return students;
     }
 
-    const filteredStudent = await Student.findOne({id: Number(studentId)}).populate(['class', 'subjects']);
+    const filteredStudent = await Student.findById(studentId).populate(['class', 'subjects']);
 
 
     if (!filteredStudent) {
@@ -138,7 +196,7 @@ export const getStudent = async (id, user) => {
 
   // TEACHER
   if (user.role === "teacher") {
-    if (id !== undefined) {
+    if (studentId !== undefined) {
       throw new AppError('Unauthorized access', 403);
     }
 
@@ -153,6 +211,10 @@ export const getStudent = async (id, user) => {
     if (!existingTeacher) {
       throw new AppError('Teacher not found', 404);
     }
+
+    if (!existingTeacher.class) {
+      throw new AppError('Unauthorized access', 403);
+    };
 
     const students = await Student.find({
       class: existingTeacher.class

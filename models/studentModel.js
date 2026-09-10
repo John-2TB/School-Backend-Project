@@ -1,10 +1,16 @@
 import mongoose from "mongoose";
 
 const studentSchema = new mongoose.Schema({
-  id: {
-    type: Number,
+  registrationNumber: {
+    type: String,
     required: true,
     unique: true
+  },
+
+  academicSession: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'AcademicSession',
+    required: true 
   },
 
   name: {

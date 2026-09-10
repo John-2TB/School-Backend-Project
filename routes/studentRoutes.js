@@ -14,7 +14,7 @@ const router = express.Router();
 // ====================================
 // GET
 // ====================================
-router.get('/:id', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeStudentAccess(), getStudentController);
+router.get('/:studentId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeStudentAccess(), getStudentController);
 router.get('/', authValidation(),ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), getStudentController);
 
 
@@ -31,12 +31,12 @@ router.post('/', validatesStudent({ requireAll: true }), authValidation(), ensur
 // ====================================
 // PATCH
 // ====================================
-router.patch('/:id', validatesStudent({requireAll: false}), authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeStudentAccess(), updateStudentController);
+router.patch('/:studentId', validatesStudent({requireAll: false}), authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeStudentAccess(), updateStudentController);
 
 
 // ====================================
 // DELETE
 // ====================================
-router.delete('/:id', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), deleteStudentController);
+router.delete('/:studentId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), deleteStudentController);
 
 export default router;

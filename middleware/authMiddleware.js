@@ -89,7 +89,6 @@ export const authorizeStudentAccess = () => {
        return next();
       }
 
-      // Checks if a parameter ID was passed then it checks if the teacher's class coresspond with the requested student class
       const existingUser = await User.findById(req.user.userId).populate('teacher');
 
       if (!existingUser) {
@@ -106,12 +105,18 @@ export const authorizeStudentAccess = () => {
 
       const existingTeacher = existingUser.teacher;
 
-      const requestedStudent = await Student.findById(req.params.id);
+      const requestedStudent = await Student.findById(req.params.studentId);
 
       if (!requestedStudent) {
         return res.status(404).json({
           message: "Student not found"
         });
+      };
+
+      if (!existingTeacher.class) {
+        return res.status(403).json({
+          message: 'Unauthorized access'
+        })
       };
 
       if (!existingTeacher.class.equals(requestedStudent.class)) {
