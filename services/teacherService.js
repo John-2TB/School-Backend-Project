@@ -4,29 +4,40 @@ import { Subject } from "../models/subjectModel.js";
 import { AppError } from "../errors/AppError.js";
 import mongoose from "mongoose";
 import { User } from "../models/userModel.js";
+import { Staff } from "../models/staffModel.js";
 
 
 // Create Teacher
 export const createTeacher = async (teacherData) => {
   const {
-    name,
-    email,
-    age,
+    staff,
     class: teacherClass,
     subjects
   } = teacherData;
 
   // Checks data type
   if (
-    typeof name !== "string" ||
-    name.trim().length === 0 ||
-    typeof email !== "string" ||
-    email.trim().length === 0 ||    
-    typeof age !== "number" ||
+    staff === undefined ||
+    typeof staff !== 'string' ||
+    staff.trim().length === 0 ||
     (teacherClass !== undefined && !mongoose.isValidObjectId(teacherClass)) ||
     (subjects !== undefined && !Array.isArray(subjects))
   ) {
     throw new AppError('Invalid data format', 400)
+  }
+
+  if (!mongoose.isValidObjectId(staff)) {
+    throw new AppError('Invalid staff ID', 400);
+  };
+
+  const existingStaff = await Staff.findById(staff);
+
+  if (!existingStaff) {
+    throw new AppError('Staff not found', 404);
+  }
+
+  if (existingStaff.staffType !== 'teaching') {
+    throw new AppError('Staff member is not teaching staff', 400);
   }
 
   if (teacherClass !== undefined) {
@@ -69,9 +80,7 @@ export const createTeacher = async (teacherData) => {
 
 
   const newTeacher = await Teacher.create({
-    name,
-    email,
-    age,
+    staff,
     class: teacherClass,
     subjects
   });
@@ -85,7 +94,7 @@ export const createTeacher = async (teacherData) => {
 export const getTeacher = async (teacherId) => {
 
   if (teacherId === undefined) {
-    return await Teacher.find().populate(['class', 'subjects']);
+    return await Teacher.find().populate(['staff', 'class', 'subjects']);
   }
 
   if (
@@ -96,7 +105,7 @@ export const getTeacher = async (teacherId) => {
     throw new AppError('Invalid teacher ID', 400)
   }
 
-  const fetchedTeacher = await Teacher.findById(teacherId).populate(['class', 'subjects']);
+  const fetchedTeacher = await Teacher.findById(teacherId).populate(['staff', 'class', 'subjects']);
 
   if (!fetchedTeacher) {
     throw new AppError('Teacher not found', 404);
@@ -110,18 +119,11 @@ export const getTeacher = async (teacherId) => {
 export const updateTeacher = async (teacherId, teacherData) => {
 
   const {
-    name,
-    email,
-    age,
     class: teacherClass,
     subjects
   } = teacherData;
 
   if(
-    (name !== undefined && typeof name !== 'string') ||
-    (age !== undefined && typeof age !== 'number') ||
-    (email !== undefined && typeof email !== 'string') ||
-    (email !== undefined && email.trim().length === 0) ||
     (teacherClass !== undefined && typeof teacherClass !== 'string') ||
     (subjects !== undefined && !Array.isArray(subjects))
   ) {
@@ -165,9 +167,6 @@ export const updateTeacher = async (teacherId, teacherData) => {
   
 
   const updateData = {
-    ...(name !== undefined && { name }),
-    ...(age !== undefined && { age }),
-    ...(email !== undefined && { email }),
     ...(teacherClass !== undefined && { class: teacherClass }),
     ...(subjects !== undefined && { subjects })
   };
@@ -200,9 +199,17 @@ export const deleteTeacher = async (teacherId) => {
   }
 
   // checks if ID is existing
-  const existingTeacher = await Teacher.findById(teacherId);
+  const existingTeacher = await Teacher.findById(teacherId).populate('staff');
   if (!existingTeacher) {
     throw new AppError('No teacher found', 404)
+  }
+
+  if (!existingTeacher.staff) {
+    throw new AppError('Teacher is not assigned to a staff', 400);
+  }
+
+  if (existingTeacher.staff.isActive === true) {
+    throw new AppError('Teacher cannot be deleted while their staff account is active', 400);
   }
 
   await User.findOneAndDelete({

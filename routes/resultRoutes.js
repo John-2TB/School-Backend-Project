@@ -1,6 +1,6 @@
 import express from 'express';
 import { authorizeRoles, authValidation, ensurePasswordIsChanged, authorizeResultSubjectAccess} from '../middleware/authMiddleware.js';
-import { createResultController, deleteResultController, getResultController, getResultsByStudentController, updateResultController } from '../controllers/resultController.js';
+import { createResultController, deleteResultController, getResultController, getResultsByStudentRegistrationNumberController, updateResultController } from '../controllers/resultController.js';
 
 
 
@@ -17,11 +17,11 @@ router.post('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('ad
 
 
 router.get(
-  '/student/:studentId',
+  '/student/:registrationNumber',
   authValidation(),
   ensurePasswordIsChanged(),
   authorizeRoles('admin', 'teacher', 'student'),
-  getResultsByStudentController
+  getResultsByStudentRegistrationNumberController
 );
 
 

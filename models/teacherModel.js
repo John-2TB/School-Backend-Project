@@ -1,22 +1,11 @@
 import mongoose from "mongoose";
 
 const teacherSchema = new mongoose.Schema({
-  name: {
-    type: String,
+  staff: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Staff',
     required: true,
-    trim: true
-  },
-
-  email: {
-    type: String,
-    required: true,
-    trim: true
-  },
-
-  age: {
-    type: Number,
-    required: true,
-    min: 1
+    unique: true
   },
 
   class: {

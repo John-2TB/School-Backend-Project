@@ -7,6 +7,7 @@ import userRoutes from './routes/userRoutes.js';
 import teacherRoutes from './routes/teacherRoutes.js';
 import academicSessionRoutes from './routes/academicSessionRoutes.js'
 import resultRoutes from './routes/resultRoutes.js'
+import staffRoutes from './routes/staffRoutes.js'
 import { errorHandler } from './middleware/errorHandler.js';
 import { connectDB } from './config/db.js';
 
@@ -23,10 +24,11 @@ app.use('/user', userRoutes);
 app.use('/teachers', teacherRoutes);
 app.use('/academicSessions', academicSessionRoutes);
 app.use('/results', resultRoutes);
+app.use('/staff', staffRoutes);
 
 
 app.get('/', (req, res) => {
-  res.send('Server is running')
+  res.send('Server is running');
 });
 
 app.use(errorHandler);

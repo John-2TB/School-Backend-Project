@@ -1,4 +1,4 @@
-import { createResults, deleteResult, getResult, getResultsByStudent, getResultsByStudentRegistrationNumber, updateResult } from "../services/resultService.js";
+import { createResults, deleteResult, getResult, getResultsByStudentRegistrationNumber, updateResult } from "../services/resultService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 
