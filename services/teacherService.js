@@ -23,19 +23,20 @@ export const createTeacher = async (teacherData) => {
     typeof email !== "string" ||
     email.trim().length === 0 ||    
     typeof age !== "number" ||
-    !mongoose.isValidObjectId(teacherClass) ||
+    (teacherClass !== undefined && !mongoose.isValidObjectId(teacherClass)) ||
     (subjects !== undefined && !Array.isArray(subjects))
   ) {
     throw new AppError('Invalid data format', 400)
   }
 
-  // Check if the class exists
-  const existingClass = await Class.findById(teacherClass);
+  if (teacherClass !== undefined) {
+    // Check if the class exists
+    const existingClass = await Class.findById(teacherClass);
 
-  if (!existingClass) {
-    throw new AppError('Class not found', 404);
-  }
-
+    if (!existingClass) {
+      throw new AppError('Class not found', 404);
+    }
+  };
 
   // Checks if subject IDs exist
   if (subjects && subjects.length > 0) {
