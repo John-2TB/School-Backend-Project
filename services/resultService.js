@@ -401,7 +401,7 @@ export const updateResult = async (resultId, resultData) => {
     resultId,
     updateData,
     {
-      new: true,
+      returnDocument: 'after',
       runValidators: true
     }
   );

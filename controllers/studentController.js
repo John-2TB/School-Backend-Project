@@ -1,10 +1,17 @@
 import { createStudent, deleteStudent, getStudent, getStudentByRegistrationNumber, updateStudent } from '../services/studentService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { AppError } from '../errors/AppError.js';
 
 // GET /student
 export const getStudentController = asyncHandler(
   async (req, res) => {
-    const student = await getStudent(req.params.studentId, req.user);
+    const student = await getStudent(
+      req.params.studentId,
+      req.user,
+      req.query.age,
+      req.query.class,
+      req.query.subject
+    );
 
     res.status(200).json({
       message: 'Students found',
@@ -30,19 +37,19 @@ export const getStudentByRegistrationNumberController = asyncHandler(
 export const createStudentController = asyncHandler(
   async (req, res) => {
 
-    let subjects = [];
+    // let subjects = [];
 
-    if (req.body.subjects !== undefined) {
-      try {
-        subjects = JSON.parse(req.body.subjects);
-      } catch {
-        throw new AppError('Subjects must be a valid JSON array', 400);
-      }
+    // if (req.body.subjects !== undefined) {
+    //   try {
+    //     subjects = JSON.parse(req.body.subjects);
+    //   } catch {
+    //     throw new AppError('Subjects must be a valid JSON array', 400);
+    //   }
 
-      if (!Array.isArray(subjects)) {
-        throw new AppError('Subjects must be an array', 400);
-      }
-    }
+    //   if (!Array.isArray(subjects)) {
+    //     throw new AppError('Subjects must be an array', 400);
+    //   }
+    // }
 
     let uploadedImage = null
     
@@ -53,7 +60,6 @@ export const createStudentController = asyncHandler(
     const studentData = {
       ...req.body,
       age: Number(req.body.age),
-      subjects: req.body.subjects ? JSON.parse(req.body.subjects) : [],
       ...(uploadedImage && {
         profilePicture: {
           url: uploadedImage.secure_url,

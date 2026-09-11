@@ -1,5 +1,5 @@
 import express from 'express';
-import { validatesStudent } from '../middleware/validation.js';
+import { normalizeStudentData, validatesStudent } from '../middleware/validation.js';
 import { authValidation, authorizeRoles, authorizeStudentAccess, ensurePasswordIsChanged } from '../middleware/authMiddleware.js';
 import { 
   createStudentController, 
@@ -30,7 +30,7 @@ router.get('/', authValidation(),ensurePasswordIsChanged(), authorizeRoles('admi
 // ====================================
 
 // Create a new student
-router.post('/', validatesStudent({ requireAll: true }), authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), upload.single('profilePicture'), createStudentController);
+router.post('/', upload.single('profilePicture'), normalizeStudentData(),  validatesStudent({ requireAll: true }), authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), createStudentController);
 
 
 // ====================================

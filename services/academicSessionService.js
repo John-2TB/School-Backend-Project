@@ -82,7 +82,7 @@ export const updateAcademicSession = async (sessionId, sessionData) => {
   const updatedSession = await AcademicSession.findByIdAndUpdate(
     sessionId,
     updateData,
-    {new: true}
+    {returnDocument: 'after'}
   );
 
   if (!updatedSession) {

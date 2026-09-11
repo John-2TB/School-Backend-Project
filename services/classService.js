@@ -88,7 +88,7 @@ export const updateClass = async (classId, classData) => {
   const updatedClass = await Class.findByIdAndUpdate(
     classId,
     updateData,
-    {new: true}
+    {returnDocument: 'after'}
   );
 
   if (!updatedClass) {

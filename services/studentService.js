@@ -6,7 +6,7 @@ import { Teacher } from "../models/teacherModel.js";
 import { User } from "../models/userModel.js";
 import { AcademicSession } from "../models/academicSessionModel.js";
 import { StudentCounter } from "../models/studentCounterModel.js";
-import { mongo } from "mongoose";
+import mongoose, { mongo } from "mongoose";
 
 
 // POST /student
@@ -46,7 +46,7 @@ export const createStudent = async (studentData) => {
 
   // Checks if subject IDs exist
   if (subjects && subjects.length > 0) {
-    const isValidSubjectId = subjects.every(subject => mongoose.isValidSubjectId(subject));
+    const isValidSubjectId = subjects.every(subject => mongoose.isValidObjectId(subject));
 
     if (!isValidSubjectId) {
       throw new AppError('Invalid subject ID', 400);
@@ -66,7 +66,7 @@ export const createStudent = async (studentData) => {
   const counter = await StudentCounter.findOneAndUpdate(
     {},
     { $inc: { sequence: 1 } },
-    { new: true, upsert: true }
+    { returnDocument: 'after', upsert: true }
   );
 
   const session = existingSession.session;
@@ -166,7 +166,7 @@ export const updateStudent = async (studentID, studentDetails) => {
   const updatedStudent = await Student.findByIdAndUpdate(
     studentID,
     updateData,
-    {new: true}
+    {returnDocument: 'after'}
   );
 
   if (!updatedStudent) {
@@ -178,12 +178,57 @@ export const updateStudent = async (studentID, studentDetails) => {
 
 
 // GET /students
-export const getStudent = async (studentId, user) => {
+export const getStudent = async (studentId, user, queryAge, queryClass, querySubject) => {
 
   // ADMIN
   if (user.role === 'admin') {
+
+    // For dynamically updating the filter
+    const filter = {};
+
+    // If a student ID wasn't inputed
     if (studentId === undefined) {
-      const students = await Student.find().populate(['class', 'subjects']);
+
+      // For querying the subjects of the students
+      if (querySubject !== undefined) {
+        if (
+          querySubject.trim().length === 0 ||
+          !mongoose.isValidObjectId(querySubject)
+        ) {
+          throw new AppError('Input a valid subject ID', 400);
+        }
+
+        filter.subjects = querySubject;
+      };
+
+      // For querying the class of the students
+      if (queryClass !== undefined) {
+        if (
+          queryClass.trim().length === 0 ||
+          !mongoose.isValidObjectId(queryClass)
+        ) {
+          throw new AppError('Input a valid class ID', 400);
+        }
+
+        filter.class = queryClass;
+      };
+
+      // For querying the age of the students
+      if (queryAge !== undefined) {
+        if (
+          queryAge.trim().length === 0
+        ) {
+          throw new AppError('Input a valid age', 400);
+        }
+
+        if (Number.isNaN(Number(queryAge))) {
+          throw new AppError('Age must be a valid number', 400);
+        };
+
+        filter.age = Number(queryAge)
+      };
+
+      const students = await Student.find(filter).populate(['class', 'subjects']);
 
       if (students.length === 0) {
         throw new AppError('No student found', 404);
@@ -192,6 +237,7 @@ export const getStudent = async (studentId, user) => {
       return students;
     }
 
+    // If the student ID was inputed
     const filteredStudent = await Student.findById(studentId).populate(['class', 'subjects']);
 
 
@@ -205,10 +251,6 @@ export const getStudent = async (studentId, user) => {
 
   // TEACHER
   if (user.role === "teacher") {
-    if (studentId !== undefined) {
-      throw new AppError('Unauthorized access', 403);
-    }
-
     const existingUser = await User.findById(user.userId).populate('teacher');
 
     if (!existingUser) {
@@ -225,9 +267,89 @@ export const getStudent = async (studentId, user) => {
       throw new AppError('Unauthorized access', 403);
     };
 
-    const students = await Student.find({
+    if (!existingTeacher.subjects) {
+      throw new AppError('Unauthorized access', 403);
+    };
+
+    const filter = {
       class: existingTeacher.class
-    }).populate(['class', 'subjects']);
+    }
+
+
+    // Get students that is in the teacher's class
+    if (studentId === undefined) {
+
+      // For querying the subjects of the students
+      if (querySubject !== undefined) {
+        if (
+          querySubject.trim().length === 0 ||
+          !mongoose.isValidObjectId(querySubject)
+        ) {
+          throw new AppError('Input a valid subject ID', 400);
+        }
+
+        if (
+          !existingTeacher.subjects.some(
+            subject => subject.toString() === querySubject
+          )
+        ) {
+          throw new AppError('Unauthorized access', 403);
+        }
+
+        filter.subjects = querySubject;
+      };
+
+      if (queryAge !== undefined) {
+        if (
+          queryAge.trim().length === 0
+        ) {
+          throw new AppError('Input a valid age', 400);
+        }
+
+        const queriedAge = Number(queryAge);
+
+        if (Number.isNaN(queriedAge)) {
+          throw new AppError('Age must be a valid number', 400);
+        }
+
+        filter.age = queriedAge;
+      }
+
+      const students = await Student.find(filter).populate(['class', 'subjects']);
+
+      if (students.length === 0) {
+        throw new AppError('No student found', 404);
+      }
+
+      return students;
+    };
+
+
+    if (queryAge !== undefined) {
+      if (
+        queryAge.trim().length === 0
+      ) {
+        throw new AppError('Input a valid age', 400);
+      }
+
+      const queriedAge = Number(queryAge);
+
+      if (Number.isNaN(queriedAge)) {
+        throw new AppError('Age must be a valid number', 400);
+      }
+
+      filter.age = queriedAge;
+
+      const students = await Student.find(filter).populate(['class', 'subjects']);
+
+      if (students.length === 0){
+        throw new AppError('No student found', 404);
+      }
+
+      return students;
+    };
+
+    const students = await Student.find(filter).populate(['class', 'subjects']);
 
     if (students.length === 0) {
       throw new AppError('No student found', 404);

@@ -127,7 +127,7 @@ export const deleteSubject = async (subjectId) => {
 
 
 
-export const updateSubject = (subjectId, subjectData) => {
+export const updateSubject = async (subjectId, subjectData) => {
 
   if (!mongoose.isValidObjectId(subjectId)) {
     throw new AppError('Invalid subject ID', 400)
@@ -152,7 +152,7 @@ export const updateSubject = (subjectId, subjectData) => {
   const updatedSubject = await Subject.findByIdAndUpdate(
     subjectId,
     {name},
-    {new: true}
+    {returnDocument: 'after'}
   );
 
   return updatedSubject;

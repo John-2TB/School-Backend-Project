@@ -28,7 +28,7 @@ export const deactivateStaff = async (staffId) => {
   const updatedStaff = await Staff.findByIdAndUpdate(
     staffId,
     {isActive: false},
-    {new: true}
+    {returnDocument: 'after'}
   );
 
   return updatedStaff;
@@ -60,7 +60,7 @@ export const activateStaff = async (staffId) => {
   const updatedStaff = await Staff.findByIdAndUpdate(
     staffId,
     {isActive: true},
-    {new: true}
+    {returnDocument: 'after'}
   );
 
   return updatedStaff;
@@ -201,7 +201,7 @@ export const updateStaff = async (staffId, staffData) => {
   const updatedStaff = await Staff.findByIdAndUpdate(
     staffId,
     updateData,
-    {new: true}
+    {returnDocument: 'after'}
   );
 
   if (!updatedStaff) {

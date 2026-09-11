@@ -179,7 +179,7 @@ export const updateTeacher = async (teacherId, teacherData) => {
   const updatedTeacher = await Teacher.findByIdAndUpdate(
     teacherId,
     updateData,
-    {new: true}
+    {returnDocument: 'after'}
   );
 
   if (!updatedTeacher) {

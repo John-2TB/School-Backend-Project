@@ -4,31 +4,30 @@ import { Subject } from "../models/subjectModel.js";
 
 export const validatesStudent = (options) => {
   return (req, res, next) => {
-  const { id, name, age, class: studentClass, subjects } = req.body;
+  const { name, age, class: studentClass, subjects } = req.body;
 
   // ============================ 
   // POST validation 
   // ============================
 
   if(options.requireAll){
-
     // Checks if all required filed exist
     if (
-      id === undefined ||
       name === undefined ||
       age === undefined ||
       studentClass === undefined ||
       subjects === undefined
     ) {
       return res.status(400).json({
-        message: 'id, name, age, class and subjects are required'
+        message: 'Name, age, class and subjects are required'
       });
     }
+
+
 
     
     // Checks type of data that was given
     if (
-      typeof id !== 'number' ||
       typeof name !== 'string' ||
       typeof age !== 'number' ||
       typeof studentClass !== 'string' ||
@@ -68,7 +67,6 @@ export const validatesStudent = (options) => {
 
     // Checks value
     if (
-      id <= 0 ||
       name.trim().length === 0 ||
       age <= 0 ||
       studentClass.trim().length === 0
@@ -87,7 +85,6 @@ export const validatesStudent = (options) => {
 
     // only validates fields that were actually provided
     if (
-      id !== undefined ||
       (name !== undefined && typeof name !== 'string') ||
       (age !== undefined && typeof age !== 'number') ||
       (studentClass !== undefined && typeof studentClass !== 'string') ||
@@ -271,4 +268,27 @@ export const validateUser = () => {
 
     next();    
   }
+};
+
+
+export const normalizeStudentData = () => {
+  return (req, res, next) => {
+  // Convert age from string to number
+  if (req.body.age !== undefined) {
+    req.body.age = Number(req.body.age);
+  }
+
+  // Convert subjects from JSON string to array
+  if (req.body.subjects !== undefined) {
+    try {
+      req.body.subjects = JSON.parse(req.body.subjects);
+    } catch {
+      return res.status(400).json({
+        message: 'Subjects must be a valid JSON array'
+      });
+    }
+  }
+
+  next();
+}
 };
