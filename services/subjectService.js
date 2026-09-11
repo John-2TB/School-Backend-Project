@@ -3,15 +3,20 @@ import { Student } from "../models/studentModel.js";
 import { AppError } from '../errors/AppError.js';
 import { User } from "../models/userModel.js";
 import mongoose from "mongoose";
+import { Teacher } from "../models/teacherModel.js";
 
 // Create a new subject
 export const createSubject = async (subjectData) => {
   const { name } = subjectData
 
-  if (name === undefined || 
-    typeof name !== 'string' ||
-    name.trim().length === 0) {
-    throw new AppError('Invalid data', 400);
+  if (name === undefined ) {
+    throw new AppError('Subject name is required', 400);
+  } 
+  if (typeof name !== 'string') {
+    throw new AppError('Subject name must be a string', 400);
+  }
+  if (name.trim().length === 0) {
+    throw new AppError('Subject name cannot be empty', 400);
   }
 
   const newSubject = await Subject.create({
@@ -109,7 +114,46 @@ export const deleteSubject = async (subjectId) => {
     { $pull: { subjects: subjectId } }
   );
 
+  await Teacher.updateMany(
+    { subjects: subjectId },
+    { $pull: { subjects: subjectId } }
+  )
+
   const deletedSubject = await Subject.findByIdAndDelete(subjectId);
 
   return deletedSubject;
-}
+};
+
+
+
+
+export const updateSubject = (subjectId, subjectData) => {
+
+  if (!mongoose.isValidObjectId(subjectId)) {
+    throw new AppError('Invalid subject ID', 400)
+  }
+
+  // Checks if subject IDs exist
+  const existingSubject = await Subject.findById(subjectId)
+
+  if (!existingSubject) {
+    throw new AppError('Subject not found', 404);
+  }
+
+  const { name } = subjectData
+
+  if (name === undefined || 
+    name.trim().length === 0) {
+    throw new AppError('Subject name is required', 400);
+  } else if (typeof name !== 'string') {
+    throw new AppError('Subject name must be a string', 400);
+  }
+
+  const updatedSubject = await Subject.findByIdAndUpdate(
+    subjectId,
+    {name},
+    {new: true}
+  );
+
+  return updatedSubject;
+};

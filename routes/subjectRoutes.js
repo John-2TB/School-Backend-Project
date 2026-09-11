@@ -1,5 +1,5 @@
 import express from 'express';
-import { createSubjectController, deleteSubjectController, getStudentsBySubjectIdController, getSubjectController } from "../controllers/subjectController.js";
+import { createSubjectController, deleteSubjectController, getStudentsBySubjectIdController, getSubjectController, updateSubjectController } from "../controllers/subjectController.js";
 import { authValidation, authorizeRoles, authorizeSubjectAccess, ensurePasswordIsChanged } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -22,6 +22,13 @@ router.get('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('adm
 // ====================================
 // DELETE
 // ====================================
-router.delete('/:subjectId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), deleteSubjectController)
+router.delete('/:subjectId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), deleteSubjectController);
+
+
+
+// ====================================
+// DELETE
+// ====================================
+router.patch('/:subjectId', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), updateSubjectController);
 
 export default router;
