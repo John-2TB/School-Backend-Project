@@ -6,6 +6,7 @@ import { Teacher } from "../models/teacherModel.js";
 import { User } from "../models/userModel.js";
 import { AcademicSession } from "../models/academicSessionModel.js";
 import { StudentCounter } from "../models/studentCounterModel.js";
+import { mongo } from "mongoose";
 
 
 // POST /student
@@ -13,6 +14,7 @@ export const createStudent = async (studentData) => {
   const {
     name,
     age,
+    profilePicture,
     class: studentClass,
     subjects,
     academicSession
@@ -44,6 +46,12 @@ export const createStudent = async (studentData) => {
 
   // Checks if subject IDs exist
   if (subjects && subjects.length > 0) {
+    const isValidSubjectId = subjects.every(subject => mongoose.isValidSubjectId(subject));
+
+    if (!isValidSubjectId) {
+      throw new AppError('Invalid subject ID', 400);
+    }
+
     const existingSubjects = await Subject.find({
       _id: { $in: subjects }
     })
@@ -76,6 +84,7 @@ export const createStudent = async (studentData) => {
     registrationNumber,
     name,
     age,
+    profilePicture,
     class: studentClass,
     subjects,
     academicSession

@@ -73,7 +73,8 @@ export const createStaff = async (staffData) => {
     email,
     age,
     staffType,
-    position
+    position,
+    profilePicture
   } = staffData;
 
   if (
@@ -85,6 +86,7 @@ export const createStaff = async (staffData) => {
     email.trim().length === 0 ||
     age === undefined ||
     typeof age !== 'number' ||
+    Number.isNaN(age) ||
     staffType === undefined ||
     typeof staffType !== 'string' ||
     staffType.trim().length === 0 ||
@@ -106,7 +108,8 @@ export const createStaff = async (staffData) => {
     email,
     age,
     staffType,
-    position
+    position,
+    profilePicture
   });
 
   return newStaff;

@@ -1,6 +1,7 @@
 import express from 'express';
 import { activateStaffController, createStaffController, deactivateStaffController, deleteStaffController, getStaffController, updateStaffController } from '../controllers/staffController.js';
 import { authorizeRoles, authValidation, ensurePasswordIsChanged } from '../middleware/authMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 
 const router = express.Router();
@@ -15,7 +16,7 @@ router.patch('/:staffId/activate', authValidation(), ensurePasswordIsChanged(), 
 
 
 // Create the staff
-router.post('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), createStaffController);
+router.post('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), upload.single('profilePicture'), createStaffController);
 
 
 // Get the staff

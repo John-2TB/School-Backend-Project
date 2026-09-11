@@ -29,7 +29,40 @@ export const getStudentByRegistrationNumberController = asyncHandler(
 // POST /student
 export const createStudentController = asyncHandler(
   async (req, res) => {
-    const newStudent = await createStudent(req.body);
+
+    let subjects = [];
+
+    if (req.body.subjects !== undefined) {
+      try {
+        subjects = JSON.parse(req.body.subjects);
+      } catch {
+        throw new AppError('Subjects must be a valid JSON array', 400);
+      }
+
+      if (!Array.isArray(subjects)) {
+        throw new AppError('Subjects must be an array', 400);
+      }
+    }
+
+    let uploadedImage = null
+    
+    if (req.file) {
+      uploadedImage = await uploadToCloudinary(req.file.buffer);
+    }
+
+    const studentData = {
+      ...req.body,
+      age: Number(req.body.age),
+      subjects: req.body.subjects ? JSON.parse(req.body.subjects) : [],
+      ...(uploadedImage && {
+        profilePicture: {
+          url: uploadedImage.secure_url,
+          publicId: uploadedImage.public_id
+        }
+      })
+    };
+
+    const newStudent = await createStudent(studentData);
 
     res.status(201).json({
       message: 'Created students successfully',

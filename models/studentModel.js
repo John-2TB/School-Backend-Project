@@ -25,6 +25,11 @@ const studentSchema = new mongoose.Schema({
     min: 1
   },
 
+  profilePicture: {
+    url: String,
+    publicId: String
+  },
+
   class: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Class'

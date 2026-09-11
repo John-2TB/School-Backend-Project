@@ -1,5 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { activateStaff, createStaff, deactivateStaff, deleteStaff, getStaff, updateStaff } from "../services/staffService.js";
+import { uploadToCloudinary } from "../services/cloudinaryService.js";
 
 
 export const deactivateStaffController = asyncHandler(
@@ -29,7 +30,25 @@ export const activateStaffController = asyncHandler(
 
 export const createStaffController = asyncHandler(
   async (req, res) => {
-    const createdStaff = await createStaff(req.body);
+
+    let uploadedImage = null
+
+    if (req.file) {
+     uploadedImage = await uploadToCloudinary(req.file.buffer);
+    }
+
+    const staffData = {
+      ...req.body,
+      age: Number(req.body.age),
+      ...(uploadedImage && {
+        profilePicture: {
+          url: uploadedImage.secure_url,
+          publicId: uploadedImage.public_id
+        }
+      })
+    };
+
+    const createdStaff = await createStaff(staffData);
 
     res.status(201).json({
       message: 'Staff successfully created',

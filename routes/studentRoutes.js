@@ -8,6 +8,7 @@ import {
   getStudentController, 
   updateStudentController
 } from '../controllers/studentController.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.get('/', authValidation(),ensurePasswordIsChanged(), authorizeRoles('admi
 // ====================================
 
 // Create a new student
-router.post('/', validatesStudent({ requireAll: true }), authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), createStudentController);
+router.post('/', validatesStudent({ requireAll: true }), authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), upload.single('profilePicture'), createStudentController);
 
 
 // ====================================
