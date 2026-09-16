@@ -23,6 +23,14 @@ export const createAcademicSession = async (sessionData) => {
     throw new AppError('Invalid data', 400);
   };
 
+  const existingSession = await AcademicSession.findOne({
+    session: session
+  });
+
+  if (existingSession) {
+    throw new AppError('Academic session already exists', 409);
+  }
+
   if (isCurrent !== undefined) {
     if (
       typeof isCurrent !== 'boolean'
@@ -30,9 +38,10 @@ export const createAcademicSession = async (sessionData) => {
       throw new AppError('Invalid data passed into current session', 400);
     }
 
-    const dbSession = await mongoose.startSession();
 
     if (isCurrent === true) {
+      const dbSession = await mongoose.startSession();
+
       try {
         dbSession.startTransaction();
         
@@ -133,25 +142,109 @@ export const getCurrentAcademicSession = async () => {
 
 // Update academic sessions
 export const updateAcademicSession = async (sessionId, sessionData) => {
-  const { session } = sessionData
+  const { session, isCurrent, currentTerm } = sessionData
 
   if (
     sessionId === undefined ||
-    session === undefined ||
     typeof sessionId !== 'string' ||
-    typeof session !== 'string' ||
-    sessionId.trim().length === 0 ||
-    session.trim().length === 0
+    sessionId.trim().length === 0
   ) {
-    throw new AppError('Invalid data', 400);
+    throw new AppError('Invalid session ID', 400);
   };
 
   if (!mongoose.isValidObjectId(sessionId)) {
     throw new AppError('Invalid session ID', 400);
   }
 
+  const existingSession = await AcademicSession.findById(sessionId);
+
+  if (!existingSession) {
+    throw new AppError('No academic session found', 404);
+  };
+
+  if (session !== undefined) {
+    if (
+      typeof session !== 'string' ||
+      session.trim().length === 0
+    ) {
+      throw new AppError('Invalid session provided', 400);
+    };
+
+    const duplicateSession = await AcademicSession.findOne({
+      session,
+      _id: { $ne: sessionId }
+    });
+
+    if (duplicateSession) {
+      throw new AppError('An academic session with this name already exists', 409);
+    };
+  };
+
+  if (currentTerm !== undefined) {
+    throw new AppError("You can't change the term through this method", 400);
+  }
+
+  // Checks if isCurrent is being changed
+  if (isCurrent !== undefined) {
+    if (
+      typeof isCurrent !== 'boolean'
+    ) {
+      throw new AppError('Invalid data passed into current session', 400);
+    }
+
+
+    if (isCurrent === true) {
+      const dbSession = await mongoose.startSession();
+
+      try {
+        dbSession.startTransaction();
+        
+        // Checks if there is a current session
+        const existingCurrentSession = await AcademicSession.findOne({
+          isCurrent: true
+        }).session(dbSession);
+
+        // If there is a sesion that is current change it to false
+        if (existingCurrentSession) {
+          await AcademicSession.findByIdAndUpdate(
+            existingCurrentSession._id,
+            {isCurrent: false},
+            {session: dbSession}
+          );
+        };
+
+        const updateData = {
+          ...(session !== undefined && { session }),
+          ...(isCurrent !== undefined && { isCurrent })
+        };
+
+        const updatedSession = await AcademicSession.findByIdAndUpdate(
+          sessionId,
+          updateData,
+          {returnDocument: 'after'}
+        ).session(dbSession);
+
+
+        await dbSession.commitTransaction();
+
+        return updatedSession;
+
+      } catch (error) {
+        await dbSession.abortTransaction();
+        throw error
+      } finally {
+        await dbSession.endSession();
+      };
+    }
+
+    if (isCurrent === false && existingSession.isCurrent === true) {
+      throw new AppError('The current academic session cannot be unset. Make another session current first.', 400);
+    }
+  };
+
   const updateData = {
-    ...(session !== undefined && { session })
+    ...(session !== undefined && { session }),
+    ...(isCurrent !== undefined && { isCurrent })
   };
 
   const updatedSession = await AcademicSession.findByIdAndUpdate(
@@ -160,13 +253,10 @@ export const updateAcademicSession = async (sessionId, sessionData) => {
     {returnDocument: 'after'}
   );
 
-  if (!updatedSession) {
-    throw new AppError('No academic session found', 404);
-  };
-
   return updatedSession;
-
 };
+
+
 
 // Change the current session term
 export const advanceAcademicTerm = async () => {

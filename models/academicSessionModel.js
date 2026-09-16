@@ -4,7 +4,8 @@ const academicSessionSchema = new mongoose.Schema({
   session: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    unique: true
   },
 
   isCurrent: {
