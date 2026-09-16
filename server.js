@@ -22,7 +22,7 @@ app.use('/classes', classRoutes);
 app.use('/subjects', subjectRoutes);
 app.use('/user', userRoutes);
 app.use('/teachers', teacherRoutes);
-app.use('/academicSessions', academicSessionRoutes);
+app.use('/academic-sessions', academicSessionRoutes);
 app.use('/results', resultRoutes);
 app.use('/staff', staffRoutes);
 

@@ -1,4 +1,4 @@
-import { createAcademicSession, deleteAcademicSession, getAcademicSession, updateAcademicSession } from "../services/academicSessionService.js";
+import { advanceAcademicTerm, createAcademicSession, deleteAcademicSession, getAcademicSession, getCurrentAcademicSession, updateAcademicSession } from "../services/academicSessionService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 
@@ -27,6 +27,18 @@ export const getAcademicSessionController = asyncHandler(
 );
 
 
+export const getCurrentAcademicSessionController = asyncHandler(
+  async (req, res) => {
+    const currentSession = await getCurrentAcademicSession();
+
+    res.status(200).json({
+      message: 'Current academic session found',
+      data: currentSession
+    });
+  }
+);
+
+
 
 export const updateAcademicSessionController = asyncHandler(
   async (req, res) => {
@@ -35,6 +47,17 @@ export const updateAcademicSessionController = asyncHandler(
     res.status(200).json({
       message: 'Academic session was updated successfully',
       data: updatedAcademicSession
+    });
+  }
+);
+
+export const advanceAcademicTermController = asyncHandler(
+  async (req, res) => {
+    const advancedAcademicTerm = await advanceAcademicTerm();
+
+    res.status(200).json({
+      message: 'Academic session term was updated successfully',
+      data: advancedAcademicTerm
     });
   }
 );

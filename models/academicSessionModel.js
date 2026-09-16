@@ -5,6 +5,17 @@ const academicSessionSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
+  },
+
+  isCurrent: {
+    type: Boolean,
+    default: false
+  },
+
+  currentTerm: {
+    type: String,
+    enum: ['First Term', 'Second Term', 'Third Term'],
+    required: true
   }
 });
 

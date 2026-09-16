@@ -5,7 +5,7 @@ import { AcademicSession } from "../models/academicSessionModel.js";
 
 // CREATE a new academic session
 export const createAcademicSession = async (sessionData) => {
-  const { session } = sessionData;
+  const { session, isCurrent, currentTerm } = sessionData;
 
   if (
     session === undefined ||
@@ -15,9 +15,71 @@ export const createAcademicSession = async (sessionData) => {
     throw new AppError('Invalid data', 400);
   };
 
-  const newAcademicSession = await AcademicSession.create({
-    session
-  });
+  if (
+    currentTerm === undefined ||
+    typeof currentTerm !== 'string' ||
+    currentTerm.trim().length === 0
+  ) {
+    throw new AppError('Invalid data', 400);
+  };
+
+  if (isCurrent !== undefined) {
+    if (
+      typeof isCurrent !== 'boolean'
+    ) {
+      throw new AppError('Invalid data passed into current session', 400);
+    }
+
+    const dbSession = await mongoose.startSession();
+
+    if (isCurrent === true) {
+      try {
+        dbSession.startTransaction();
+        
+        // Checks if there is a current session
+        const existingCurrentSession = await AcademicSession.findOne({
+          isCurrent: true
+        }).session(dbSession);
+
+        // If there is a sesion that is current change it to false
+        if (existingCurrentSession) {
+          await AcademicSession.findByIdAndUpdate(
+            existingCurrentSession._id,
+            {isCurrent: false},
+            {session: dbSession}
+          );
+        };
+
+        const [newAcademicSession] = await AcademicSession.create(
+          [{
+            session,
+            isCurrent,
+            currentTerm
+          }],
+          {session: dbSession}
+        );
+
+        await dbSession.commitTransaction();
+
+        return newAcademicSession;
+        
+
+      } catch (error) {
+        await dbSession.abortTransaction();
+        throw error
+      } finally {
+        await dbSession.endSession();
+      };
+    }
+  };
+
+  const newAcademicSession = await AcademicSession.create(
+    {
+      session,
+      isCurrent,
+      currentTerm
+    }
+  );
 
   return newAcademicSession;
 };
@@ -56,6 +118,19 @@ export const getAcademicSession = async (sessionId) => {
 };
 
 
+export const getCurrentAcademicSession = async () => {
+  const currentSession = await AcademicSession.findOne({
+    isCurrent: true
+  });
+
+  if (!currentSession) {
+    throw new AppError('No current academic session found', 404);
+  };
+
+  return currentSession;
+};
+
+
 // Update academic sessions
 export const updateAcademicSession = async (sessionId, sessionData) => {
   const { session } = sessionData
@@ -91,6 +166,29 @@ export const updateAcademicSession = async (sessionId, sessionData) => {
 
   return updatedSession;
 
+};
+
+// Change the current session term
+export const advanceAcademicTerm = async () => {
+  const existingCurrentSession = await AcademicSession.findOne({
+    isCurrent: true
+  });
+
+  if (!existingCurrentSession) {
+    throw new AppError('No current academic session found', 404);
+  };
+
+  if (existingCurrentSession.currentTerm === 'First Term') {
+    existingCurrentSession.currentTerm = 'Second Term'
+  } else if (existingCurrentSession.currentTerm === 'Second Term') {
+    existingCurrentSession.currentTerm = 'Third Term'
+  } else {
+    throw new AppError('Academic session is already in Third Term, create a new academic session', 400);
+  }
+
+  await existingCurrentSession.save();
+
+  return existingCurrentSession;
 };
 
 

@@ -6,7 +6,8 @@ import { Teacher } from "../models/teacherModel.js";
 import { User } from "../models/userModel.js";
 import { AcademicSession } from "../models/academicSessionModel.js";
 import { StudentCounter } from "../models/studentCounterModel.js";
-import mongoose, { mongo } from "mongoose";
+import { escapeRegex } from "../utils/escapeRegex.js";
+import mongoose from "mongoose";
 
 
 // POST /student
@@ -178,7 +179,7 @@ export const updateStudent = async (studentID, studentDetails) => {
 
 
 // GET /students
-export const getStudent = async (studentId, user, queryAge, queryClass, querySubject) => {
+export const getStudent = async (studentId, user, queryAge, queryClass, querySubject, queryName) => {
 
   // ADMIN
   if (user.role === 'admin') {
@@ -189,28 +190,60 @@ export const getStudent = async (studentId, user, queryAge, queryClass, querySub
     // If a student ID wasn't inputed
     if (studentId === undefined) {
 
+      // For querying the name of the students
+      if (queryName !== undefined) {
+        if (queryName.trim().length === 0) {
+          throw new AppError('Input a valid student name', 400)
+        }
+
+        filter.name = {
+          $regex: escapeRegex(queryName.trim()),
+          $options: 'i'
+        };
+      }
+
       // For querying the subjects of the students
       if (querySubject !== undefined) {
         if (
-          querySubject.trim().length === 0 ||
-          !mongoose.isValidObjectId(querySubject)
+          querySubject.trim().length === 0
         ) {
-          throw new AppError('Input a valid subject ID', 400);
+          throw new AppError('Input a valid subject name', 400);
         }
 
-        filter.subjects = querySubject;
+        const existingSubject = await Subject.findOne({
+          name: {
+            $regex: `^${escapeRegex(querySubject.trim())}$`,
+            $options: 'i'
+          }
+        });
+
+        if (!existingSubject) {
+          throw new AppError('Subject not found', 404);
+        }
+
+        filter.subjects = existingSubject._id;
       };
 
       // For querying the class of the students
       if (queryClass !== undefined) {
         if (
-          queryClass.trim().length === 0 ||
-          !mongoose.isValidObjectId(queryClass)
+          queryClass.trim().length === 0
         ) {
-          throw new AppError('Input a valid class ID', 400);
+          throw new AppError('Input a valid class name', 400);
         }
 
-        filter.class = queryClass;
+        const existingClass = await Class.findOne({
+          name : {
+            $regex: `^${escapeRegex(queryClass.trim())}$`,
+            $options: 'i'
+          }
+        });
+
+        if (!existingClass) {
+          throw new AppError('Class not found', 404);
+        }
+
+        filter.class = existingClass._id;
       };
 
       // For querying the age of the students
@@ -279,24 +312,46 @@ export const getStudent = async (studentId, user, queryAge, queryClass, querySub
     // Get students that is in the teacher's class
     if (studentId === undefined) {
 
+      // For querying the name of the students
+      if (queryName !== undefined) {
+        if (queryName.trim().length === 0) {
+          throw new AppError('Input a valid student name', 400)
+        }
+
+        filter.name = {
+          $regex: escapeRegex(queryName.trim()),
+          $options: 'i'
+        };
+      };
+
       // For querying the subjects of the students
       if (querySubject !== undefined) {
         if (
-          querySubject.trim().length === 0 ||
-          !mongoose.isValidObjectId(querySubject)
+          querySubject.trim().length === 0
         ) {
-          throw new AppError('Input a valid subject ID', 400);
+          throw new AppError('Input a valid subject name', 400);
+        }
+
+        const existingSubject = await Subject.findOne({
+          name: {
+            $regex: `^${escapeRegex(querySubject.trim())}$`,
+            $options: 'i'
+          }
+        });
+
+        if (!existingSubject) {
+          throw new AppError('Subject not found', 404);
         }
 
         if (
           !existingTeacher.subjects.some(
-            subject => subject.toString() === querySubject
+            subject => subject.toString() === existingSubject._id.toString()
           )
         ) {
           throw new AppError('Unauthorized access', 403);
         }
 
-        filter.subjects = querySubject;
+        filter.subjects = existingSubject._id;
       };
 
       if (queryAge !== undefined) {
@@ -318,31 +373,6 @@ export const getStudent = async (studentId, user, queryAge, queryClass, querySub
       const students = await Student.find(filter).populate(['class', 'subjects']);
 
       if (students.length === 0) {
-        throw new AppError('No student found', 404);
-      }
-
-      return students;
-    };
-
-
-    if (queryAge !== undefined) {
-      if (
-        queryAge.trim().length === 0
-      ) {
-        throw new AppError('Input a valid age', 400);
-      }
-
-      const queriedAge = Number(queryAge);
-
-      if (Number.isNaN(queriedAge)) {
-        throw new AppError('Age must be a valid number', 400);
-      }
-
-      filter.age = queriedAge;
-
-      const students = await Student.find(filter).populate(['class', 'subjects']);
-
-      if (students.length === 0){
         throw new AppError('No student found', 404);
       }
 
