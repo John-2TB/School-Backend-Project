@@ -11,7 +11,10 @@ export const getStudentController = asyncHandler(
       req.query.age,
       req.query.class,
       req.query.subject,
-      req.query.name
+      req.query.name,
+      req.query.sort,
+      req.query.page,
+      req.query.limit
     );
 
     res.status(200).json({

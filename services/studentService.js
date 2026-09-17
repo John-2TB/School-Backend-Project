@@ -10,6 +10,9 @@ import { escapeRegex } from "../utils/escapeRegex.js";
 import mongoose from "mongoose";
 
 
+const allowedSortFields = ['name', 'age', 'registrationNumber'];
+
+
 // POST /student
 export const createStudent = async (studentData) => {
   const {
@@ -179,13 +182,55 @@ export const updateStudent = async (studentID, studentDetails) => {
 
 
 // GET /students
-export const getStudent = async (studentId, user, queryAge, queryClass, querySubject, queryName) => {
+export const getStudent = async (
+  studentId,
+  user,
+  queryAge,
+  queryClass,
+  querySubject,
+  queryName,
+  querySort,
+  queryPage,
+  queryLimit
+) => {
+
+  if (queryPage !== undefined) {
+    queryPage = Number(queryPage);
+
+    if (Number.isNaN(queryPage)) {
+      throw new AppError('Invalid page number', 400);
+    };
+
+    if (!Number.isInteger(queryPage) || queryPage <= 0) {
+      throw new AppError('Invalid page number', 400);
+    };
+  };
+
+  if (queryLimit !== undefined) {
+    queryLimit = Number(queryLimit);
+
+    if (Number.isNaN(queryLimit)) {
+      throw new AppError('Invalid limit number', 400);
+    };
+
+    if (!Number.isInteger(queryLimit) || queryLimit <= 0) {
+      throw new AppError('Invalid limit number', 400);
+    };
+  };
+
+  // Default value for page and limit
+  let page = queryPage ?? 1;
+  let limit = queryLimit ?? 12;
+
+  const skip = (page - 1) * limit;
 
   // ADMIN
   if (user.role === 'admin') {
 
     // For dynamically updating the filter
     const filter = {};
+    // For dynamically updating the sorting
+    const sort = {};
 
     // If a student ID wasn't inputed
     if (studentId === undefined) {
@@ -261,7 +306,22 @@ export const getStudent = async (studentId, user, queryAge, queryClass, querySub
         filter.age = Number(queryAge)
       };
 
-      const students = await Student.find(filter).populate(['class', 'subjects']);
+      // For sorting
+      if (querySort !== undefined) {
+        const sortDirection = querySort.startsWith('-') ? -1 : 1;
+
+        if (querySort.startsWith('-')) {
+          querySort = querySort.slice(1);
+        }
+
+        if (!allowedSortFields.includes(querySort)) {
+          throw new AppError('Invalid sorting method', 400);
+        }
+
+        sort[querySort] = sortDirection;
+      };
+
+      const students = await Student.find(filter).populate(['class', 'subjects']).sort(sort).skip(skip).limit(limit);
 
       if (students.length === 0) {
         throw new AppError('No student found', 404);
@@ -306,7 +366,9 @@ export const getStudent = async (studentId, user, queryAge, queryClass, querySub
 
     const filter = {
       class: existingTeacher.class
-    }
+    };
+
+    const sort = {};
 
 
     // Get students that is in the teacher's class
@@ -370,7 +432,22 @@ export const getStudent = async (studentId, user, queryAge, queryClass, querySub
         filter.age = queriedAge;
       }
 
-      const students = await Student.find(filter).populate(['class', 'subjects']);
+      // For sorting
+      if (querySort !== undefined) {
+        const sortDirection = querySort.startsWith('-') ? -1 : 1;
+
+        if (querySort.startsWith('-')) {
+          querySort = querySort.slice(1);
+        }
+
+        if (!allowedSortFields.includes(querySort)) {
+          throw new AppError('Invalid sorting method', 400);
+        }
+
+        sort[querySort] = sortDirection;
+      };
+
+      const students = await Student.find(filter).populate(['class', 'subjects']).sort(sort).skip(skip).limit(limit);
 
       if (students.length === 0) {
         throw new AppError('No student found', 404);
