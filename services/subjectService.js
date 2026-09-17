@@ -4,10 +4,11 @@ import { AppError } from '../errors/AppError.js';
 import { User } from "../models/userModel.js";
 import mongoose from "mongoose";
 import { Teacher } from "../models/teacherModel.js";
+import { Class } from "../models/classModel.js";
 
 // Create a new subject
 export const createSubject = async (subjectData) => {
-  const { name } = subjectData
+  const { name, class: subjectClass } = subjectData
 
   if (name === undefined ) {
     throw new AppError('Subject name is required', 400);
@@ -19,8 +20,24 @@ export const createSubject = async (subjectData) => {
     throw new AppError('Subject name cannot be empty', 400);
   }
 
+  if (
+    subjectClass === undefined ||
+    typeof subjectClass !== 'string' ||
+    subjectClass.trim().length === 0 ||
+    !mongoose.isValidObjectId(subjectClass)
+  ) {
+    throw new AppError('Invalid class ID', 400);
+  }
+
+  if (
+    !await Class.findById(subjectClass)
+  ) {
+    throw new AppError('Class not found', 404);
+  }
+
   const newSubject = await Subject.create({
-    name
+    name,
+    class: subjectClass
   });
 
   return newSubject;
@@ -37,6 +54,12 @@ export const getstudentsBySubjectId = async (subjectId) => {
   ) {
     throw new AppError('Invalid subject ID', 400)
   }
+
+  const existingSubject = await Subject.findById(subjectId);
+
+  if (!existingSubject) {
+    throw new AppError('Subject not found', 404);
+  };
 
   const students = await Student.find({ subjects: subjectId }).populate(['class', 'subjects']);
 
@@ -55,7 +78,7 @@ export const getSubjects = async (user, subjectId) => {
 
     // Admin and teacher can see all subjects
     if (user.role === 'admin' || user.role === 'teacher') {
-      return await Subject.find();
+      return await Subject.find().populate('class');
     }
 
     const existingUser = await User.findById(user.userId).populate('student');
@@ -72,17 +95,25 @@ export const getSubjects = async (user, subjectId) => {
 
     return await Subject.find({
       _id: {$in: existingStudent.subjects}
-    });
+    }).populate('class');
   }
 
-  // If subjectId was provided
-  const existingSubjects =  await Subject.findById(subjectId);
+  if (
+    typeof subjectId !== 'string' ||
+    subjectId.trim().length === 0 ||
+    !mongoose.isValidObjectId(subjectId)
+  ) {
+    throw new AppError('Invalid subject ID', 400);
+  };
 
-  if (!existingSubjects) {
+  // If subjectId was provided
+  const existingSubject =  await Subject.findById(subjectId).populate('class');
+
+  if (!existingSubject) {
     throw new AppError('Subject not found', 404);
   }
 
-  return existingSubjects;
+  return existingSubject;
   
 };
 
@@ -142,12 +173,25 @@ export const updateSubject = async (subjectId, subjectData) => {
 
   const { name } = subjectData
 
-  if (name === undefined || 
-    name.trim().length === 0) {
+  if (name === undefined) {
     throw new AppError('Subject name is required', 400);
-  } else if (typeof name !== 'string') {
+  }
+  if (typeof name !== 'string') {
     throw new AppError('Subject name must be a string', 400);
   }
+  if (name.trim().length === 0) {
+    throw new AppError('Subject name cannot be empty', 400);
+  }
+
+  const checkDuplicateDetails = await Subject.findOne({
+    name: name,
+    class: existingSubject.class,
+    _id: { $ne: subjectId }
+  });
+
+  if (checkDuplicateDetails) {
+    throw new AppError('A subject already exists with the same name and class', 409);
+  };
 
   const updatedSubject = await Subject.findByIdAndUpdate(
     subjectId,

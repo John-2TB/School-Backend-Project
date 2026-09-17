@@ -1,5 +1,5 @@
 import express from 'express';
-import { authorizeRoles, authValidation, ensurePasswordIsChanged, authorizeResultSubjectAccess} from '../middleware/authMiddleware.js';
+import { authorizeRoles, authValidation, ensurePasswordIsChanged, authorizeResultSubjectAccess, authorizeResultCreationAccess} from '../middleware/authMiddleware.js';
 import { createResultController, deleteResultController, getResultController, getResultsByStudentRegistrationNumberController, updateResultController } from '../controllers/resultController.js';
 
 
@@ -9,7 +9,7 @@ const router = express.Router();
 // ====================================
 // POST
 // ====================================
-router.post('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin'), createResultController);
+router.post('/', authValidation(), ensurePasswordIsChanged(), authorizeRoles('admin', 'teacher'), authorizeResultCreationAccess(), createResultController);
 
 // ====================================
 // GET

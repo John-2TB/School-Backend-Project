@@ -12,8 +12,6 @@ export const createResults = async (resultData) => {
   const {
     student,
     subject,
-    academicSession,
-    term,
     ca,
     exam
   } = resultData;
@@ -26,38 +24,45 @@ export const createResults = async (resultData) => {
     throw new AppError('Invalid subject ID', 400)
   };
 
-  if (!mongoose.isValidObjectId(academicSession)){
-    throw new AppError('Invalid academic session ID', 400)
-  };
+  const existingStudent = await Student.findById(student);
 
   if (
-    !await Student.findById(student)
+    !existingStudent
   ) {
     throw new AppError('Student not found', 404);
   }
 
+  const existingSubject = await Subject.findById(subject);
+
   if (
-    !await Subject.findById(subject)
+    !existingSubject
   ) {
     throw new AppError('Subject not found', 404);
   }
 
+  // Checks if the subject is for the student class
   if (
-    !await AcademicSession.findById(academicSession)
+    !existingStudent.class.equals(existingSubject.class)
   ) {
-    throw new AppError('Academic session not found', 404);
+    throw new AppError('Subject is not for this class', 400);
   }
 
-  const validTerm = ['First Term', 'Second Term', 'Third Term']
-
   if (
-    term === undefined ||
-    typeof term !== 'string' ||
-    term.trim().length === 0 ||
-    !validTerm.includes(term)
+    !existingStudent.subjects.some(subject => subject._id.equals(existingSubject._id))
   ) {
-    throw new AppError('Invalid data passed into term', 400);
+    throw new AppError('Student is not assigned to this subject', 400);
   }
+
+  const currentSession = await AcademicSession.findOne({
+    isCurrent: true
+  });
+
+  if (!currentSession) {
+    throw new AppError('No current academic session found', 404);
+  }
+
+  const academicSession = currentSession._id;
+  const term = currentSession.currentTerm;
 
   if (
     (ca !== undefined && typeof ca !== 'number') ||

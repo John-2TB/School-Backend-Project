@@ -4,6 +4,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { Teacher } from '../models/teacherModel.js';
 import { Student } from '../models/studentModel.js';
 import { Result } from '../models/resultModel.js';
+import { AppError } from '../errors/AppError.js';
+import mongoose from 'mongoose';
 
 
 export const authValidation = () => {
@@ -283,7 +285,7 @@ export const authorizeResultSubjectAccess = () => {
         throw new AppError('Teacher is not assigned to a subject', 400);
       }
   
-      const existingResult = await Result.findById(req.params.resultId);
+      const existingResult = await Result.findById(req.params.resultId).populate('student');
   
       if (!existingResult) {
         throw new AppError('Result not found', 404);
@@ -294,7 +296,91 @@ export const authorizeResultSubjectAccess = () => {
       );
   
       if (!hasAccess) {
-        throw new AppError('Unauthorized Access', 403);
+        throw new AppError('Teacher cannot modify this result', 403);
+      }
+
+      const existingStudent = existingResult.student;
+
+      // Checks if student document exists
+      if (!existingStudent) {
+        throw new AppError('Student is not assigned to this result', 404);
+      };
+
+      const studentTakesSubject = existingStudent.subjects.some(
+        subject => subject.equals(existingResult.subject)
+      );
+
+      if (
+        !studentTakesSubject
+      ) {
+        throw new AppError('Teacher cannot modify this result for this student', 403)
+      }
+
+      next();
+
+    }
+  );
+};
+
+
+export const authorizeResultCreationAccess = () => {
+  return asyncHandler(
+    async (req, res, next) => {
+
+      // Admins can create any result
+      if (req.user.role === 'admin') {
+        return next();
+      };
+
+      // Teacher can only create a result for a subject they teach
+      // and a student who is taking that subject
+      const existingUser = await User.findById(req.user.userId).populate('teacher');
+
+      if (!existingUser) {
+        throw new AppError('User not found', 404);
+      };
+
+      const existingTeacher = existingUser.teacher;
+
+      if (!existingTeacher) {
+        throw new AppError('User is not assigned to a teacher', 404);
+      };
+
+      if (!existingTeacher.subjects || existingTeacher.subjects.length === 0) {
+        throw new AppError('Teacher is not assigned to a subject', 400);
+      };
+
+      if (
+        !existingTeacher.subjects.some(
+          subject => subject.equals(req.body.subject
+
+          ))
+      ) {
+        throw new AppError('Teacher is not assigned to this subject', 403);
+      };
+
+      // Validate the student ID passed in
+      if (
+        !mongoose.isValidObjectId(req.body.student)
+      ) {
+        throw new AppError('Invalid student ID', 400);
+      };
+
+      const existingStudent = await Student.findById(req.body.student);
+
+      // Checks if student exists
+      if (!existingStudent) {
+        throw new AppError('Student not found', 404);
+      };
+
+      const studentTakesSubject = existingStudent.subjects.some(
+        subject => subject.equals(req.body.subject)
+      );
+
+      if (
+        !studentTakesSubject
+      ) {
+        throw new AppError('Teacher cannot create a result for this student', 403)
       }
 
       next();

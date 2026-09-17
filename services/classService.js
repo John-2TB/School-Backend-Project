@@ -7,7 +7,9 @@ import { AppError } from '../errors/AppError.js';
 export const createClass = async (className) => {
   const { name } = className;
 
-  if (typeof name !== 'string' ||
+  if (
+    name === undefined ||
+    typeof name !== 'string' ||
     name.trim().length === 0
   ) {
     throw new AppError('Invalid data type', 400);
