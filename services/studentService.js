@@ -209,13 +209,13 @@ export const getStudent = async (
   if (queryLimit !== undefined) {
     queryLimit = Number(queryLimit);
 
-    if (Number.isNaN(queryLimit)) {
-      throw new AppError('Invalid limit number', 400);
-    };
-
     if (!Number.isInteger(queryLimit) || queryLimit <= 0) {
       throw new AppError('Invalid limit number', 400);
     };
+
+    if (queryLimit > 50) {
+      throw new AppError('Limit cannot exceed 50', 400);
+    }
   };
 
   // Default value for page and limit
@@ -321,13 +321,31 @@ export const getStudent = async (
         sort[querySort] = sortDirection;
       };
 
+      const totalStudents = await Student.countDocuments(filter);
+      const totalPages = Math.ceil(totalStudents/limit);
+
+      if (totalStudents === 0) {
+        throw new AppError('No student found', 404);
+      };
+
+      if (page > totalPages) {
+        throw new AppError('Page does not exist', 404);
+      };
+
+      const hasNextPage = page < totalPages;
+      const hasPreviousPage = page > 1;
+
       const students = await Student.find(filter).populate(['class', 'subjects']).sort(sort).skip(skip).limit(limit);
 
-      if (students.length === 0) {
-        throw new AppError('No student found', 404);
-      }
-
-      return students;
+      return {
+        students,
+        "currentPage": page,
+        limit,
+        totalStudents,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
+      };
     }
 
     // If the student ID was inputed
@@ -447,22 +465,43 @@ export const getStudent = async (
         sort[querySort] = sortDirection;
       };
 
+      const totalStudents = await Student.countDocuments(filter);
+      const totalPages = Math.ceil(totalStudents/limit);
+
+      if (totalStudents === 0) {
+        throw new AppError('No student found', 404);
+      };
+
+      if (page > totalPages) {
+        throw new AppError('Page does not exist', 404);
+      };
+
+      const hasNextPage = page < totalPages;
+      const hasPreviousPage = page > 1;
+
       const students = await Student.find(filter).populate(['class', 'subjects']).sort(sort).skip(skip).limit(limit);
 
-      if (students.length === 0) {
-        throw new AppError('No student found', 404);
-      }
-
-      return students;
+      return {
+        students,
+        "currentPage": page,
+        limit,
+        totalStudents,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
+      };
     };
 
-    const students = await Student.find(filter).populate(['class', 'subjects']);
+    const student = await Student.findOne({
+      _id: studentId,
+      class: filter.class
+    }).populate(['class', 'subjects']);
 
-    if (students.length === 0) {
+    if (!student) {
       throw new AppError('No student found', 404);
     };
 
-    return students;
+    return student;
   }
 };
 
