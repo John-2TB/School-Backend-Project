@@ -191,7 +191,8 @@ export const getStudent = async (
   queryName,
   querySort,
   queryPage,
-  queryLimit
+  queryLimit,
+  queryFields
 ) => {
 
   if (queryPage !== undefined) {
@@ -223,6 +224,36 @@ export const getStudent = async (
   let limit = queryLimit ?? 12;
 
   const skip = (page - 1) * limit;
+
+  // Allowed query fields
+  const allowedFields = [
+    'name',
+    'age',
+    'class',
+    'subjects',
+    'registrationNumber'
+  ];
+
+  let fields;
+
+  if (queryFields !== undefined) {
+    if (
+      queryFields.trim().length === 0
+    ) {
+      throw new AppError('Fields can not be empty', 400);
+    }
+
+    fields = queryFields.split(',').map(
+      field => field.trim()
+    );
+
+
+    if (fields.some(
+      field => !allowedFields.includes(field)
+    )) {
+      throw new AppError('This field is not allowed to be qureid for', 400)
+    }
+  }
 
   // ADMIN
   if (user.role === 'admin') {
@@ -335,21 +366,23 @@ export const getStudent = async (
       const hasNextPage = page < totalPages;
       const hasPreviousPage = page > 1;
 
-      const students = await Student.find(filter).populate(['class', 'subjects']).sort(sort).skip(skip).limit(limit);
+      const students = await Student.find(filter).populate(['class', 'subjects']).sort(sort).skip(skip).limit(limit).select(fields?.join(' '));
 
       return {
-        students,
-        "currentPage": page,
-        limit,
-        totalStudents,
-        totalPages,
-        hasNextPage,
-        hasPreviousPage
+        pagination: {
+          "currentPage": page,
+          limit,
+          totalStudents,
+          totalPages,
+          hasNextPage,
+          hasPreviousPage,
+        }, 
+        students
       };
     }
 
     // If the student ID was inputed
-    const filteredStudent = await Student.findById(studentId).populate(['class', 'subjects']);
+    const filteredStudent = await Student.findById(studentId).populate(['class', 'subjects']).select(fields?.join(' '));
 
 
     if (!filteredStudent) {
@@ -479,23 +512,25 @@ export const getStudent = async (
       const hasNextPage = page < totalPages;
       const hasPreviousPage = page > 1;
 
-      const students = await Student.find(filter).populate(['class', 'subjects']).sort(sort).skip(skip).limit(limit);
+      const students = await Student.find(filter).populate(['class', 'subjects']).sort(sort).skip(skip).limit(limit).select(fields?.join(' '));
 
       return {
-        students,
-        "currentPage": page,
-        limit,
-        totalStudents,
-        totalPages,
-        hasNextPage,
-        hasPreviousPage
+        pagination: {
+          "currentPage": page,
+          limit,
+          totalStudents,
+          totalPages,
+          hasNextPage,
+          hasPreviousPage,
+        },
+        students
       };
     };
 
     const student = await Student.findOne({
       _id: studentId,
       class: filter.class
-    }).populate(['class', 'subjects']);
+    }).populate(['class', 'subjects']).select(fields?.join(' '));
 
     if (!student) {
       throw new AppError('No student found', 404);

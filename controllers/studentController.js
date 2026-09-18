@@ -14,7 +14,8 @@ export const getStudentController = asyncHandler(
       req.query.name,
       req.query.sort,
       req.query.page,
-      req.query.limit
+      req.query.limit,
+      req.query.fields
     );
 
     res.status(200).json({
@@ -40,20 +41,6 @@ export const getStudentByRegistrationNumberController = asyncHandler(
 // POST /student
 export const createStudentController = asyncHandler(
   async (req, res) => {
-
-    // let subjects = [];
-
-    // if (req.body.subjects !== undefined) {
-    //   try {
-    //     subjects = JSON.parse(req.body.subjects);
-    //   } catch {
-    //     throw new AppError('Subjects must be a valid JSON array', 400);
-    //   }
-
-    //   if (!Array.isArray(subjects)) {
-    //     throw new AppError('Subjects must be an array', 400);
-    //   }
-    // }
 
     let uploadedImage = null
     
