@@ -12,6 +12,9 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { connectDB } from './config/db.js';
 
 const app = express();
+
+app.set('query parser', 'extended');
+
 const port = 3000;
 
 

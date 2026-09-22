@@ -192,7 +192,8 @@ export const getStudent = async (
   querySort,
   queryPage,
   queryLimit,
-  queryFields
+  queryFields,
+  querySearch
 ) => {
 
   if (queryPage !== undefined) {
@@ -253,7 +254,13 @@ export const getStudent = async (
     )) {
       throw new AppError('This field is not allowed to be qureid for', 400)
     }
-  }
+  };
+
+  if (querySearch !== undefined) {
+    if (querySearch.trim().length === 0) {
+      throw new AppError('Search field cannot be empty', 400);
+    };
+  };
 
   // ADMIN
   if (user.role === 'admin') {
@@ -324,17 +331,59 @@ export const getStudent = async (
 
       // For querying the age of the students
       if (queryAge !== undefined) {
-        if (
-          queryAge.trim().length === 0
-        ) {
-          throw new AppError('Input a valid age', 400);
-        }
 
-        if (Number.isNaN(Number(queryAge))) {
-          throw new AppError('Age must be a valid number', 400);
+        // If gte is undefined, fetch the requested age
+        if (typeof queryAge === 'string') {
+          if (
+            queryAge.trim().length === 0
+          ) {
+            throw new AppError('Input a valid age', 400);
+          }
+
+          if (Number.isNaN(Number(queryAge))) {
+            throw new AppError('Age must be a valid number', 400);
+          };
+
+          filter.age = Number(queryAge)
         };
 
-        filter.age = Number(queryAge)
+        const allowedAgeOperator = [
+          'gt',
+          'gte',
+          'lt',
+          'lte',
+          'eq',
+          'ne'
+        ];
+
+        // If gte was provided as an object
+        if (typeof queryAge === 'object') {
+
+          const keys = Object.keys(queryAge);
+
+          if (
+            !keys.every(
+              key => allowedAgeOperator.includes(key)
+            )
+          ) {
+            throw new AppError('Invalid age operator', 400);
+          };
+          
+          filter.age = {}
+
+          keys.forEach(key => {
+              // Checks if the requested age is a number
+              if (
+                queryAge[key].trim().length === 0 ||
+                Number.isNaN(Number(queryAge[key]))
+              ) {
+                throw new AppError('Input a valid number', 400);
+              };
+
+              filter.age[`$${key}`] = Number(queryAge[key])
+            }
+          )
+        };
       };
 
       // For sorting
@@ -351,6 +400,24 @@ export const getStudent = async (
 
         sort[querySort] = sortDirection;
       };
+
+      // For general searching
+      if (querySearch !== undefined) {
+        filter.$or = [
+          {
+            name: {
+              $regex: escapeRegex(querySearch.trim()),
+              $options: 'i'
+            }
+          },
+          {
+            registrationNumber: {
+              $regex: escapeRegex(querySearch.trim()),
+              $options: 'i'
+            }
+          }
+        ];
+      }
 
       const totalStudents = await Student.countDocuments(filter);
       const totalPages = Math.ceil(totalStudents/limit);

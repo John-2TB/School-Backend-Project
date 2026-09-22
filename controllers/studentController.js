@@ -15,9 +15,11 @@ export const getStudentController = asyncHandler(
       req.query.sort,
       req.query.page,
       req.query.limit,
-      req.query.fields
+      req.query.fields,
+      req.query.search,
+      req.query.age.gte
     );
-
+    
     res.status(200).json({
       message: 'Students found',
       data: student
