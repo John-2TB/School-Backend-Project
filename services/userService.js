@@ -70,17 +70,17 @@ export const loginUser = async (loginData) => {
     role
   } = loginData;
 
+  const validRole = ['student', 'teacher', 'admin']
+
+  if (!validRole.includes(role)) {
+    throw new AppError('Invalid role', 400);
+  }
+
   if (
     (role === 'teacher' || role === 'admin') &&
     registrationNumber !== undefined
   ) {
     throw new AppError('Invalid credentials', 400);
-  }
-
-  const validRole = ['student', 'teacher', 'admin']
-
-  if (!validRole.includes(role)) {
-    throw new AppError('Invalid role', 400);
   }
 
   // For student user

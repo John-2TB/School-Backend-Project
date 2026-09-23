@@ -8,6 +8,7 @@ import { AcademicSession } from "../models/academicSessionModel.js";
 import { StudentCounter } from "../models/studentCounterModel.js";
 import { escapeRegex } from "../utils/escapeRegex.js";
 import mongoose from "mongoose";
+import { validateAgeRange } from "../utils/ageRangeValidator.js";
 
 
 const allowedSortFields = ['name', 'age', 'registrationNumber'];
@@ -353,7 +354,9 @@ export const getStudent = async (
           'lt',
           'lte',
           'eq',
-          'ne'
+          'ne',
+          'in',
+          'nin'
         ];
 
         // If gte was provided as an object
@@ -372,17 +375,38 @@ export const getStudent = async (
           filter.age = {}
 
           keys.forEach(key => {
-              // Checks if the requested age is a number
-              if (
-                queryAge[key].trim().length === 0 ||
-                Number.isNaN(Number(queryAge[key]))
-              ) {
-                throw new AppError('Input a valid number', 400);
-              };
+              // Checks if key is $in
+              if (key === 'in' || key === 'nin') {
+                if (queryAge[key].trim().length === 0) {
+                  throw new AppError('Input a valid number', 400);
+                }
 
-              filter.age[`$${key}`] = Number(queryAge[key])
+                const operator = queryAge[key].split(',').map(
+                  age => {
+                    age = age.trim();
+
+                    if(Number.isNaN(Number(age))) {
+                      throw new AppError('Input a valid number', 400)
+                    }
+
+                    return Number(age);
+                  }
+                )
+
+                filter.age[`$${key}`] = operator;
+              } else {
+                // Checks if the requested age is a number
+                if (
+                  queryAge[key].trim().length === 0 ||
+                  Number.isNaN(Number(queryAge[key]))
+                ) {
+                  throw new AppError('Input a valid number', 400);
+                };
+
+                filter.age[`$${key}`] = Number(queryAge[key]);
+              }
             }
-          )
+          );
         };
       };
 
@@ -418,6 +442,10 @@ export const getStudent = async (
           }
         ];
       }
+
+      if (filter.age !== undefined) {
+        validateAgeRange(filter.age)
+      };
 
       const totalStudents = await Student.countDocuments(filter);
       const totalPages = Math.ceil(totalStudents/limit);
@@ -534,21 +562,62 @@ export const getStudent = async (
         filter.subjects = existingSubject._id;
       };
 
+      // For querying the age of the students
       if (queryAge !== undefined) {
-        if (
-          queryAge.trim().length === 0
-        ) {
-          throw new AppError('Input a valid age', 400);
-        }
 
-        const queriedAge = Number(queryAge);
+        // If gte is undefined, fetch the requested age
+        if (typeof queryAge === 'string') {
+          if (
+            queryAge.trim().length === 0
+          ) {
+            throw new AppError('Input a valid age', 400);
+          }
 
-        if (Number.isNaN(queriedAge)) {
-          throw new AppError('Age must be a valid number', 400);
-        }
+          if (Number.isNaN(Number(queryAge))) {
+            throw new AppError('Age must be a valid number', 400);
+          };
 
-        filter.age = queriedAge;
-      }
+          filter.age = Number(queryAge)
+        };
+
+        const allowedAgeOperator = [
+          'gt',
+          'gte',
+          'lt',
+          'lte',
+          'eq',
+          'ne'
+        ];
+
+        // If gte was provided as an object
+        if (typeof queryAge === 'object') {
+
+          const keys = Object.keys(queryAge);
+
+          if (
+            !keys.every(
+              key => allowedAgeOperator.includes(key)
+            )
+          ) {
+            throw new AppError('Invalid age operator', 400);
+          };
+          
+          filter.age = {}
+
+          keys.forEach(key => {
+              // Checks if the requested age is a number
+              if (
+                queryAge[key].trim().length === 0 ||
+                Number.isNaN(Number(queryAge[key]))
+              ) {
+                throw new AppError('Input a valid number', 400);
+              };
+
+              filter.age[`$${key}`] = Number(queryAge[key])
+            }
+          )
+        };
+      };
 
       // For sorting
       if (querySort !== undefined) {
@@ -563,6 +632,10 @@ export const getStudent = async (
         }
 
         sort[querySort] = sortDirection;
+      };
+
+      if (filter.age !== undefined) {
+        validateAgeRange(filter.age)
       };
 
       const totalStudents = await Student.countDocuments(filter);

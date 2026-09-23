@@ -17,7 +17,6 @@ export const getStudentController = asyncHandler(
       req.query.limit,
       req.query.fields,
       req.query.search,
-      req.query.age.gte
     );
     
     res.status(200).json({
