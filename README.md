@@ -66,7 +66,7 @@ The goal is to build a backend that doesn't just perform CRUD operations, but un
 * Production architecture improvements
 * Deployment
 
-> **Note:** Attendance and Fees & Payments are intentionally not being implemented as standalone modules. Attendance information is part of the report-card workflow and is supplied by the appropriate school staff.
+> **Note:** Attendance and Fees & Payments are intentionally not being implemented as standalone modules, but will be added as a feature later on. Attendance information is part of the report-card workflow and is supplied by the appropriate school staff.
 
 ---
 
