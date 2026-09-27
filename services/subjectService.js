@@ -8,7 +8,11 @@ import { Class } from "../models/classModel.js";
 
 // Create a new subject
 export const createSubject = async (subjectData) => {
-  const { name, class: subjectClass } = subjectData
+  const {
+    name,
+    class: subjectClass,
+    department
+  } = subjectData
 
   if (name === undefined ) {
     throw new AppError('Subject name is required', 400);
@@ -29,15 +33,56 @@ export const createSubject = async (subjectData) => {
     throw new AppError('Invalid class ID', 400);
   }
 
+  const existingClass = await Class.findById(subjectClass);
+
   if (
-    !await Class.findById(subjectClass)
+    !existingClass
   ) {
     throw new AppError('Class not found', 404);
   }
 
+  if (
+    department === undefined ||
+    !Array.isArray(department) ||
+    department.length === 0
+  ) {
+    throw new AppError('Invalid data passed into department', 400);
+  }
+
+  const validDepartment = ['Science', 'Art', 'Commercial', 'General'];
+
+  if (
+    department.some(
+      data => !validDepartment.includes(data)
+    )
+  ) {
+    throw new AppError ('Invalid department', 400);
+  };
+
+  // Checks if department conatins duplicate value
+  if (new Set(department).size !== department.length) {
+    throw new AppError('Department contains duplicate value', 400);
+  };
+
+  // To assign subject to classes
+  if (existingClass.name.startsWith('JSS')) {
+    if (department.some(
+      data => data !== 'General'
+    )) {
+      throw new AppError('Invalid department passed into JSS subject', 400);
+    };
+  };
+
+  if (existingClass.name.startsWith('SS')) {
+    if (department.includes('General') && department.length > 1) {
+      throw new AppError('You cannot assign general with another department', 400);
+    }
+  };
+
   const newSubject = await Subject.create({
     name,
-    class: subjectClass
+    class: subjectClass,
+    department
   });
 
   return newSubject;

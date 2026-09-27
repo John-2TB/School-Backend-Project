@@ -21,6 +21,7 @@ export const createStudent = async (studentData) => {
     age,
     profilePicture,
     class: studentClass,
+    department,
     subjects,
     academicSession
   } = studentData;
@@ -48,6 +49,18 @@ export const createStudent = async (studentData) => {
     throw new AppError('Class not found', 404);
   }
 
+  // Checks the class whether department is required
+  if (existingClass.name.startsWith('JSS')) {
+    if (department !== null && department !== undefined) {
+      throw new AppError('Department is not required for student in JSS class', 400);
+    };
+  };
+
+  if (existingClass.name.startsWith('SS')) {
+    if (department === undefined || department === null) {
+      throw new AppError('Department is required for student in SS class', 400);
+    };
+  };
 
   // Checks if subject IDs exist
   if (subjects && subjects.length > 0) {
@@ -64,7 +77,29 @@ export const createStudent = async (studentData) => {
     if (existingSubjects.length !== subjects.length) {
       throw new AppError('One or more subjects not found', 404);
     }
-  }
+
+    for (const subject of existingSubjects) {
+
+      if (!existingClass._id.equals(subject.class)) {
+        throw new AppError('Subject is not assigned to student class', 400);
+      }
+
+      if (existingClass.name.startsWith('JSS')) {
+        if (subject.department.some(data => data !== 'General')) {
+          throw new AppError('Only general subject can be assigned to student in JSS class', 400);
+        };
+      };
+
+      if (existingClass.name.startsWith('SS')) {
+        if (
+          !(subject.department.includes(department) || subject.department.includes('General'))
+        ) {
+          throw new AppError('Only general subject and student departmental subject can be assigned', 400);
+        }
+      }
+      
+    };
+  };
 
   // Generate the registration number
 
@@ -91,6 +126,7 @@ export const createStudent = async (studentData) => {
     age,
     profilePicture,
     class: studentClass,
+    department,
     subjects,
     academicSession
   });

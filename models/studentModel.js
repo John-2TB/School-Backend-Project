@@ -35,6 +35,12 @@ const studentSchema = new mongoose.Schema({
     ref: 'Class'
   },
 
+  department: {
+    type: String,
+    enum: ['Science', 'Art', 'Commercial'],
+    default: null
+  },
+
   subjects: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Subject'
